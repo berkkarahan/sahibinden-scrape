@@ -188,6 +188,7 @@ def main():
     try:
         listings = load_list('listings.txt')
         print("Listings successfuly loaded, getting detailed car informations...")
+        get_details_mp()
     except:
         print("Listings not found, trying to load linklist...")
         
