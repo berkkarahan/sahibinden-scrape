@@ -39,7 +39,6 @@ class URLutils():
         headers = {'User-Agent': random_user_agent}
         request = urllib.request.Request(url, headers=headers)
         response = urllib.request.urlopen(request)
-
         return response.read()
 
     @classmethod

@@ -1,6 +1,9 @@
+#Delay constants for reading URLs with uniform random wait time
+LOWER_DELAY = 0.5
+UPPER_DELAY = 1
 
 class Scraper():
-    def __init__(self,url):
+    def __init__(self,url=""):
         self._link = url
 
     @property

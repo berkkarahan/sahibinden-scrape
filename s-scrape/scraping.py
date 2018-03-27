@@ -1,4 +1,5 @@
 from .base import Scraper
+from .base import UPPER_DELAY, LOWER_DELAY
 from .utils import URLutils
 
 from bs4 import BeautifulSoup
@@ -6,10 +7,12 @@ from multiprocessing import Pool
 
 
 class MainPageScraper(Scraper):
-    def __init__(self):
-        super().__init__("https://www.sahibinden.com/kategori/otomobil")
+    def __init__(self, n_jobs):
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil")
         self._modelurls = []
+        self._submodelurls = []
         self._listings = []
+        self.n_jobs = n_jobs
 
     @property
     def linklist(self):
@@ -31,9 +34,29 @@ class MainPageScraper(Scraper):
             self._modelurls.append("https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
 
     @classmethod
+    def _get_submodels_from_page(self,url):
+        sublist = list()
+        print("----> Scraping sub-models from url: %s" % (url))
+        c = URLutils.delayedreadURL(url,LOWER_DELAY,UPPER_DELAY)
+        soup = BeautifulSoup(c, "html.parser")
+        subList = soup.find_all("li", {"class": "cl4"})
+
+        for itm in subList:
+            tmp = itm.find("a", href=True)
+            if tmp['href'] != "#":
+                ret_str = "https://www.sahibinden.com" + tmp['href']
+                sublist.append(ret_str)
+        return sublist
+
+    def scrapeSubModels(self):
+        with Pool(self.n_jobs) as pool:
+            self._submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
+
+    @classmethod
     def _get_listings_from_page(self, url):
+        #TODO, check sahibinden.com page structure, can't scrape listings currently
         print("----> Scraping listings from url: %s" % (url))
-        c = URLutils.delayedreadURL(url, 0.5, 1)
+        c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
         soup = BeautifulSoup(c, "html.parser")
         listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -46,21 +69,29 @@ class MainPageScraper(Scraper):
                 pass
 
     def scrapeListings(self):
-        with Pool(8) as pool:
-            for mainlink in self.linklist:
+        links = list()
+
+        #flatten submodelurls, list of lists
+        flat_list = list()
+        for sublist in self._submodelurls:
+            for item in sublist:
+                flat_list.append(item)
+
+        with Pool(self.n_jobs) as pool:
+            for mainlink in flat_list:
                 for pagingoffset in range(0, 990, 20):
-                    link = mainlink + str(pagingoffset)
-                    pool.apply_async(self._get_listings_from_page, args=(link,), callback=self._listings.append)
-            pool.close()
-            pool.join()
+                    link = mainlink + "?" + str(pagingoffset)
+                    links.append(link)
+            self._listings = pool.map(self._get_listings_from_page,links)
         print("Listings scraped succesfully...")
+        return self._listings
 
-
-class DetailsScraper():
-    def __init__(self, listings):
+class DetailsScraper(Scraper):
+    def __init__(self, listings, n_jobs):
+        super().__init__(url="")
         self.listings = listings
-
         self.final_list = []
+        self.n_jobs = n_jobs
 
     @classmethod
     def _get_details_from_url(self, url):
@@ -87,7 +118,7 @@ class DetailsScraper():
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = URLutils.delayedreadURL(url, 0.5, 1)
+        c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
 
         soup = BeautifulSoup(c, "html.parser")
         try:
@@ -107,16 +138,8 @@ class DetailsScraper():
         except:
             pass
 
-    @classmethod
-    def _addtoList(self, x):
-        print("****PRINTING SCRAPED CAR DETAILS****")
-        print(x)
-        self.final_list.append(x)
-        print(" * Printing length of final list: %i * " % (len(self.final_list)))
-        print("************************************")
-
     def scrapeDetails(self):
-        with Pool(8) as pool:
+        with Pool(self.n_jobs) as pool:
             results = pool.map(self._get_details_from_url,self.listings)
         self.final_list = results
 
