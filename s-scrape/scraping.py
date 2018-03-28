@@ -10,7 +10,7 @@ class MainPageScraper(Scraper):
     def __init__(self, n_jobs):
         super().__init__(url="https://www.sahibinden.com/kategori/otomobil")
         self._modelurls = []
-        self._submodelurls = []
+        self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
 
@@ -39,7 +39,7 @@ class MainPageScraper(Scraper):
         print("----> Scraping sub-models from url: %s" % (url))
         c = URLutils.delayedreadURL(url,LOWER_DELAY,UPPER_DELAY)
         soup = BeautifulSoup(c, "html.parser")
-        subList = soup.find_all("li", {"class": "cl4"})
+        subList = soup.find_all("li", {"class": "cl3"})
 
         for itm in subList:
             tmp = itm.find("a", href=True)
@@ -50,7 +50,7 @@ class MainPageScraper(Scraper):
 
     def scrapeSubModels(self):
         with Pool(self.n_jobs) as pool:
-            self._submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
+            self.submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
 
     @classmethod
     def _get_listings_from_page(self, url):
@@ -73,14 +73,14 @@ class MainPageScraper(Scraper):
 
         #flatten submodelurls, list of lists
         flat_list = list()
-        for sublist in self._submodelurls:
+        for sublist in self.submodelurls:
             for item in sublist:
                 flat_list.append(item)
 
         with Pool(self.n_jobs) as pool:
             for mainlink in flat_list:
                 for pagingoffset in range(0, 990, 20):
-                    link = mainlink + "?" + str(pagingoffset)
+                    link = mainlink + "?pagingOffset=" + str(pagingoffset)
                     links.append(link)
             self._listings = pool.map(self._get_listings_from_page,links)
         print("Listings scraped succesfully...")
