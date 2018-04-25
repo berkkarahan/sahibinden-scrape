@@ -3,6 +3,8 @@ import random
 import time
 import pickle
 
+from lxml import html
+
 class URLutils():
 
     user_agent_list = [
@@ -35,16 +37,25 @@ class URLutils():
 
     @classmethod
     def readURL(self, url):
-        random_user_agent = random.choice(self.user_agent_list)
-        headers = {'User-Agent': random_user_agent}
-        request = urllib.request.Request(url, headers=headers)
-        response = urllib.request.urlopen(request)
-        return response.read()
+        try:
+            random_user_agent = random.choice(self.user_agent_list)
+            headers = {'User-Agent': random_user_agent}
+            request = urllib.request.Request(url, headers=headers)
+            response = urllib.request.urlopen(request)
+            return response.read()
+        except:
+            print("Read error...")
+            pass
 
     @classmethod
     def delayedreadURL(self, url, lower_limit, upper_limit):
         time.sleep(random.uniform(lower_limit,upper_limit))
         return self.readURL(url)
+
+    @classmethod
+    def choosebyXPath(self,page_content,xpath):
+        root = html.fromstring(page_content)
+        return root.xpath(xpath)[0].text
 
 class IO():
 
@@ -71,3 +82,6 @@ class IO():
     def pickle_load(fname):
         with open(fname, 'rb') as f:
             return pickle.load(f)
+
+
+
