@@ -10,7 +10,7 @@ if __name__ == "__main__":
     mainwait = 15
 
     #print("Currently loading listings from pre-scraped list...")
-    mscr = MainPageScraper(64)
+    mscr = MainPageScraper(8)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     time.sleep(listingswait)
     listings = mscr.scrapeListings()
     IO.save_list("listings.txt",listings)
-    scr = DetailsScraper(listings, 64)
+    scr = DetailsScraper(listings, 8)
     print("Waiting %d seconds before scraping listings..." %mainwait)
     time.sleep(mainwait)
     scr.scrapeDetails()
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         #tempfix
         df = [x for x in scr.final_list if x is not None]
         df = pd.DataFrame(df)
-        df.to_csv("listings_"+suffix+".csv")
+        df.to_csv("listings_"+suffix+".csv", index = False)
     except:
         IO.pickle_dump('listings_list.pkl', scr.final_list)
         print("Scraping & pickling complete.")

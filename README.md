@@ -12,6 +12,7 @@ Running main from command-line uses fully exhaustive scraping, arguement parsing
 python -m s-scrape
 ```
 ## TO-DO
+- Find a way not to send too many requests.
 - Better CLI with arguement parsing.
 - Support for storing scraped data into a local database.
 - Find a way to not send requests for non-existing pages in sahibinden.com

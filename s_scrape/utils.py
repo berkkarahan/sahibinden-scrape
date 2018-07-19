@@ -83,5 +83,10 @@ class IO():
         with open(fname, 'rb') as f:
             return pickle.load(f)
 
-
-
+    @staticmethod
+    def flatten_list(inp_list):
+        return_list = []
+        for sublist in inp_list:
+            for item in sublist:
+                return_list.append(item)
+        return return_list

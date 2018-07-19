@@ -1,6 +1,6 @@
 from s_scrape.base import Scraper
 from s_scrape.base import UPPER_DELAY, LOWER_DELAY
-from s_scrape.utils import URLutils
+from s_scrape.utils import URLutils, IO
 from s_scrape._joblib import Parallel, delayed
 
 # scraping
@@ -64,19 +64,24 @@ class MainPageScraper(Scraper):
     @classmethod
     def _get_listings_from_page(self, url):
         try:
-            # TODO, check sahibinden.com page structure, can't scrape listings currently
             print("----> Scraping listings from url: %s" % (url))
+            listings_list = []
             c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
-            for itm in listitems:
+            for i in range(len(listitems)):
                 try:
-                    tmp = itm.find("a", href=True)
-                    ret_str = "https://www.sahibinden.com" + tmp['href']
-                    return ret_str
+                    cur = listitems[i]
+                    a_curr = cur.a
+                    print('Link posting: ' + a_curr['href'])
+                    ret_str = "https://www.sahibinden.com" + a_curr['href']
+                    listings_list.append(ret_str)
                 except:
-                    pass
+                    print('Read error in: ' + str(i))
+
+            return listings_list
+
         except:
             pass
 
@@ -97,12 +102,9 @@ class MainPageScraper(Scraper):
         return min(tot, 980)
 
     def scrapeListings(self, method='runtime'):
-        links = list()
-        # flatten submodelurls, list of lists
-        flat_list = list()
-        for sublist in self.submodelurls:
-            for item in sublist:
-                flat_list.append(item)
+
+        flat_list = IO.flatten_list(self.submodelurls)
+        links = []
 
         for mainlink in flat_list:
             upperlimit = self._get_listings_upperlimit(mainlink)
