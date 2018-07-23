@@ -2,28 +2,33 @@ import time
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.utils import IO
 
-#listings = IO.load_list('listings.txt')
+def _mainruntime(njobs=4,method_submodel='runtime', chunkify = True, wait = 10):
 
-if __name__ == "__main__":
-
-    listingswait = 5
-    mainwait = 15
-
-    #print("Currently loading listings from pre-scraped list...")
-    mscr = MainPageScraper(8)
+    mscr = MainPageScraper(njobs)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
-    mscr.scrapeSubModels()
+    mscr.scrapeSubModels(method = method_submodel)
     print("Sub car models scraped...")
-    print("Waiting %d seconds before scraping listings..." %listingswait)
-    time.sleep(listingswait)
-    listings = mscr.scrapeListings()
+    print("Waiting %d seconds before scraping listings..." %wait)
+    time.sleep(wait)
+    if chunkify:
+        listings = mscr.batch_scrapeListings()
+    else:
+        listings = mscr.scrapeListings()
     IO.save_list("listings.txt",listings)
-    scr = DetailsScraper(listings, 8)
-    print("Waiting %d seconds before scraping listings..." %mainwait)
-    time.sleep(mainwait)
-    scr.scrapeDetails()
+    scr = DetailsScraper(listings, njobs)
+    print("Waiting %d seconds before scraping listings..." %wait)
+    time.sleep(wait)
+    if chunkify:
+        scr.batch_scrapeDetails()
+    else:
+        scr.scrapeDetails()
+    return scr.final_list
+
+if __name__ == "__main__":
+
+    results = _mainruntime(njobs=4, method_submodel='sequential', chunkify = True, wait = 10)
 
     try:
         print("Using pandas for easier CSV extraction...")
@@ -35,7 +40,7 @@ if __name__ == "__main__":
         year = now.year
         suffix = str(day)+"-"+str(month)+"-"+str(year)
         #tempfix
-        df = [x for x in scr.final_list if x is not None]
+        df = [x for x in results if x is not None]
         df = pd.DataFrame(df)
         df.to_csv("listings_"+suffix+".csv", index = False)
     except:
