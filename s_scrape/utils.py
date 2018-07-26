@@ -4,6 +4,7 @@ import time
 import pickle
 
 from lxml import html
+from requests import get, post
 
 class URLutils():
 
@@ -36,7 +37,7 @@ class URLutils():
         ]
 
     @classmethod
-    def readURL(self, url):
+    def _standard_readURL(self, url):
         try:
             random_user_agent = random.choice(self.user_agent_list)
             headers = {'User-Agent': random_user_agent}
@@ -44,13 +45,48 @@ class URLutils():
             response = urllib.request.urlopen(request)
             return response.read()
         except:
-            print("Read error...")
+            print('Failed requesting url: ' + url)
             pass
 
     @classmethod
-    def delayedreadURL(self, url, lower_limit, upper_limit):
+    def _pixlr(self, url):
+        if not url[-1:] == '/':
+            url = url + '/'
+        return get('https://pixlr.com/proxy/?url='+url, headers = {'Accept-Encoding' : 'gzip'}, verify=False)
+
+    @classmethod
+    def _code_beautify(url):
+        random_user_agent = random.choice(self.user_agent_list)
+        headers = {
+        'User-Agent':random_user_agent,
+        'Accept':'text/plain, */*; q=0.01',
+        'Accept-Encoding':'gzip',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'Origin' : 'https://codebeautify.org',
+        'Connection' : 'close'
+        }
+        return post('https://codebeautify.com/URLService', headers=headers, data='path=' + url, verify=False)
+
+    @classmethod
+    def _photopea(url):
+        return get('https://www.photopea.com/mirror.php?url=' + url, verify=False)
+
+    @classmethod
+    def readURL(self, url, mode='standard'):
+        if mode == 'standard':
+            return self._standard_readURL(url)
+        elif mode == 'api':
+            response = random.choice([self._pixlr, self._code_beautify, self._photopea])(url)
+            if response.status_code == '404':
+                print('Failed requesting url: ' + url)
+            else:
+                return response.text
+
+
+    @classmethod
+    def delayedreadURL(self, url, lower_limit, upper_limit, mode='standard'):
         time.sleep(random.uniform(lower_limit,upper_limit))
-        return self.readURL(url)
+        return self.readURL(url, mode)
 
     @classmethod
     def choosebyXPath(self,page_content,xpath):

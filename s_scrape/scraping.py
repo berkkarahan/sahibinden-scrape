@@ -1,22 +1,17 @@
 from s_scrape.base import Scraper
 from s_scrape.base import UPPER_DELAY, LOWER_DELAY
 from s_scrape.utils import URLutils, IO
-from s_scrape._joblib import Parallel, delayed
-
-# functions
-from s_scrape._functions import chunks
 
 # scraping
 from bs4 import BeautifulSoup
 from lxml import html
-from multiprocessing import Pool
 
 import re
 
 
 class MainPageScraper(Scraper):
     def __init__(self, n_jobs):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil")
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
@@ -31,7 +26,6 @@ class MainPageScraper(Scraper):
         return self._listings
 
     #Private methods
-    @classmethod
     def _get_submodels_from_page(self, url, url_delayed=True):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
@@ -49,8 +43,9 @@ class MainPageScraper(Scraper):
                 sublist.append(ret_str)
         return sublist
 
-    @classmethod
     def _get_listings_from_page(self, url, url_delayed=True):
+        if url is None:
+            pass
         try:
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
@@ -76,14 +71,6 @@ class MainPageScraper(Scraper):
         except:
             pass
 
-    @classmethod
-    def _batch_get_listings_from_page(self,links):
-        listings=[]
-        for link in links:
-            listings.append(self._get_listings_from_page(link))
-        return listings
-
-    @classmethod
     def _get_listings_upperlimit(self, link):
         try:
             c = URLutils.readURL(link)
@@ -99,14 +86,30 @@ class MainPageScraper(Scraper):
                 tot = 20
             return min(tot, 980)
         except:
-            return print("Read error - upperlimit: " + link)
+            print("Read error - upperlimit: " + link)
+            return 20
 
-    @classmethod
-    def _batch_get_listings_upperlimit(self, links):
-        upperlimits = []
-        for link in links:
-            upperlimits.append(self._get_listings_upperlimit(link))
-        return upperlimits
+    def _wrapperBatchRun_upperlimits(self):
+        flat_list = IO.flatten_list(self.submodelurls)
+        links = []
+
+        for mainlink in flat_list:
+            if mainlink is None:
+                continue
+            else:
+                upperlimit = self._get_listings_upperlimit(mainlink)
+                print("Upperlimit for link: %s   -->   is %s" % (mainlink, str(upperlimit)))
+                for pagingoffset in range(0, upperlimit + 10, 20):
+                    link = mainlink + "?pagingOffset=" + str(pagingoffset)
+                    links.append(link)
+        return links
+
+    def _wrapperBatchRun_appendlistings(self, url):
+        self._listings.append(self._get_listings_from_page(url))
+
+    def _wrapperBatchRun_scrapeModels(self, car):
+        tmp = car.find("a", href=True)
+        self._modelurls.append("https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
 
     #Public methods
     def scrapeModels(self):
@@ -114,79 +117,33 @@ class MainPageScraper(Scraper):
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
+        self.batchrun(self._wrapperBatchRun_scrapeModels, carList)
 
-        for car in carList:
-            tmp = car.find("a", href=True)
-            self._modelurls.append("https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
-        return self
+    def _wrapperBatchRun_scrapeSubModels(self,url):
+        self.submodelurls.append(self._get_submodels_from_page(url))
 
-    def scrapeSubModels(self, method='runtime'):
-        if method == 'runtime':
-            with Pool(self.n_jobs) as pool:
-                self.submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
-        elif method == 'test':
-            with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-                self.submodelurls = Parl(delayed(self._get_submodels_from_page)(url) for url in self._modelurls)
-        elif method == 'sequential':
-            submodels = []
-            for url in self._modelurls:
-                submodels.append(self._get_submodels_from_page(url))
-            self.submodelurls = submodels
+    def scrapeSubModels(self):
+        self.batchrun(self._wrapperBatchRun_scrapeSubModels, self._modelurls)
+        #if method == 'runtime':
+        #    with Pool(self.n_jobs) as pool:
+        #        self.submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
+        #elif method == 'test':
+        #    with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
+        #        self.submodelurls = Parl(delayed(self._get_submodels_from_page)(url) for url in self._modelurls)
+        #elif method == 'sequential':
+        #    submodels = []
+        #    for url in self._modelurls:
+        #        submodels.append(self._get_submodels_from_page(url))
+        #    self.submodelurls = submodels
 
-    def scrapeListings(self, method='runtime'):
-        flat_list = IO.flatten_list(self.submodelurls)
-        links = []
-
-        for mainlink in flat_list:
-            if mainlink is None:
-                continue
-            else:
-                upperlimit = self._get_listings_upperlimit(mainlink)
-                print("Upperlimit for link: %s   -->   is %d" % (mainlink, upperlimit))
-                for pagingoffset in range(0, upperlimit + 10, 20):
-                    link = mainlink + "?pagingOffset=" + str(pagingoffset)
-                    links.append(link)
-
-        if method=='runtime':
-            with Pool(self.n_jobs) as pool:
-                self._listings = pool.map(self._get_listings_from_page, links)
-        elif method=='test':
-            with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-                self._listings = Parl(delayed(self._get_listings_from_page)(url) for url in links)
-
-        print("Listings scraped succesfully...")
-        return IO.flatten_list(self._listings)
-
-    def batch_scrapeListings(self, method='runtime'):
-        flat_list = IO.flatten_list(self.submodelurls)
-        links = []
-
-        for mainlink in flat_list:
-            if mainlink is None:
-                continue
-            else:
-                upperlimit = self._get_listings_upperlimit(mainlink)
-                print("Upperlimit for link: %s   -->   is %d" % (mainlink, upperlimit))
-                for pagingoffset in range(0, upperlimit + 10, 20):
-                    link = mainlink + "?pagingOffset=" + str(pagingoffset)
-                    links.append(link)
-
-        chunklist = chunks(links,self.n_jobs)
-
-        if method=='runtime':
-            with Pool(self.n_jobs) as pool:
-                self._listings = pool.map(self._batch_get_listings_from_page, chunklist)
-        elif method=='test':
-            with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-                self._listings = Parl(delayed(self._batch_get_listings_from_page)(l) for l in chunklist)
-
-        return IO.flatten_list(self._listings)
-
+    def scrapeListings(self):
+        links = self._wrapperBatchRun_upperlimits()
+        self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
     def __init__(self, listings, n_jobs):
 
-        super().__init__(url="")
+        super().__init__(url="", njobs=n_jobs)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
@@ -294,12 +251,14 @@ class DetailsScraper(Scraper):
         except:
             pass
 
-    @classmethod
     def _batch_get_details_xpath(self, links):
         cars = []
         for link in links:
             cars.append(self._get_details_from_url_xpath(link))
         return cars
+
+    def _wrapperBatchRun(self, url):
+        self.final_list.append(self._get_details_from_url_xpath(url))
 
     def scrapeUrl(self, url, method='xpath'):
         if method=='xpath':
@@ -307,21 +266,5 @@ class DetailsScraper(Scraper):
         elif method =='soup':
             return self._get_details_from_url(url)
 
-    def scrapeDetails(self, method='runtime'):
-        if method == 'runtime':
-            with Pool(self.n_jobs) as pool:
-                results = pool.map(self._get_details_from_url_xpath, self.listings)
-        elif method == 'test':
-            with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-                results = Parl(delayed(self._get_details_from_url_xpath)(url) for url in self.listings)
-        self.final_list = results
-
-    def batch_scrapeDetails(self, method='runtime'):
-        chunklist = chunks(self.listings, self.n_jobs)
-        if method == 'runtime':
-            with Pool(self.n_jobs) as pool:
-                results = pool.map(self._batch_get_details_xpath, chunklist)
-        elif method == 'test':
-            with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-                results = Parl(delayed(self._get_details_from_url_xpath)(url) for url in self.listings)
-        self.final_list = IO.flatten_list(results)
+    def scrapeDetails(self):
+        self.batchrun(self._wrapperBatchRun, self.listings)

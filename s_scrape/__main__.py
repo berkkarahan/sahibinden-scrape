@@ -26,9 +26,28 @@ def _mainruntime(njobs=4,method_submodel='runtime', chunkify = True, wait = 10):
         scr.scrapeDetails()
     return scr.final_list
 
+
+def _threading(njobs=4, wait = 10):
+    print("Total threads: %s"%str(njobs))
+    mscr = MainPageScraper(njobs)
+    print("Scraping started...")
+    mscr.scrapeModels()
+    print("Main car models scraped...")
+    mscr.scrapeSubModels()
+    print("Sub car models scraped...")
+    print("Waiting %d seconds before scraping listings..." %wait)
+    time.sleep(wait)
+    listings = mscr.scrapeListings()
+    IO.save_list("listings.txt",listings)
+    scr = DetailsScraper(listings, njobs)
+    print("Waiting %d seconds before scraping listings..." %wait)
+    time.sleep(wait)
+    scr.scrapeDetails()
+    return scr.final_list
+
 if __name__ == "__main__":
 
-    results = _mainruntime(njobs=4, method_submodel='sequential', chunkify = True, wait = 10)
+    results = _threading(njobs=128, wait = 10)
 
     try:
         print("Using pandas for easier CSV extraction...")
