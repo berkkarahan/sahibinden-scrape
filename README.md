@@ -4,7 +4,8 @@ A (not so) sloppy sahibinden.com scraper
 ### Minimal dependencies
 - Only BeautifulSoup is required as a third-party library apart from python standard library
     - pages are scraped from xpath using html from lxml package
-- joblib package is taken from sklearn.externals
+- ~~joblib package is taken from sklearn.externals~~
+- Using built-in parallelization.
 
 ## Usage
 Running main from command-line uses fully exhaustive scraping, arguement parsing is not yet implemented.

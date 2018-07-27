@@ -45,9 +45,18 @@ def _threading(njobs=4, wait = 10):
     scr.scrapeDetails()
     return scr.final_list
 
+
+def _using_saved_listings(njobs=4):
+    listings = IO.load_list("listings.txt")
+    scr = DetailsScraper(listings, njobs)
+    scr.scrapeDetails()
+    return scr.final_list
+
+
 if __name__ == "__main__":
 
-    results = _threading(njobs=128, wait = 10)
+    #results = _threading(njobs=128, wait = 10)
+    results = _using_saved_listings(njobs=128)
 
     try:
         print("Using pandas for easier CSV extraction...")
