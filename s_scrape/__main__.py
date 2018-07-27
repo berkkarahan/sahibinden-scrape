@@ -30,13 +30,9 @@ def _using_saved_listings(njobs=4):
 
 if __name__ == "__main__":
 
-<<<<<<< HEAD
     #results = _threading(njobs=128, wait = 10)
     results = _using_saved_listings(njobs=128)
-=======
-    results = _main(njobs=128, wait = 10)
->>>>>>> 975eee2a2fca506b004a8f02756855eb170b2397
-
+    
     try:
         print("Using pandas for easier CSV extraction...")
         import pandas as pd
