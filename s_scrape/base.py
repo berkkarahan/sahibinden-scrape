@@ -13,7 +13,6 @@ class Scraper():
     def link(self):
         return self._link
 
-    @staticmethod
     def chunks(l, njobs):
         # For item i in a range that is a length of l,
         for i in range(0, len(l), njobs):
