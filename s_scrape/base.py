@@ -13,8 +13,7 @@ class Scraper():
     def link(self):
         return self._link
 
-
-    def _chunks(l, njobs):
+    def chunks(l, njobs):
         # For item i in a range that is a length of l,
         for i in range(0, len(l), njobs):
             # Create an index range for l of n items:
