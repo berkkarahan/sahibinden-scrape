@@ -1,8 +1,22 @@
 import time
+import argparse
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.utils import IO
 
-def _main(njobs=4, wait = 10):
+def _scrape_listings(njobs=4, wait=10):
+    print("Total threads: %s"%str(njobs))
+    mscr = MainPageScraper(njobs)
+    print("Scraping started...")
+    mscr.scrapeModels()
+    print("Main car models scraped...")
+    mscr.scrapeSubModels()
+    print("Sub car models scraped...")
+    print("Waiting %d seconds before scraping listings..." %wait)
+    time.sleep(wait)
+    mscr.scrapeListings()
+    return mscr.listings
+
+def _full_scraper(njobs=4, wait = 10):
     print("Total threads: %s"%str(njobs))
     mscr = MainPageScraper(njobs)
     print("Scraping started...")
@@ -21,18 +35,34 @@ def _main(njobs=4, wait = 10):
     return scr.final_list
 
 
-def _using_saved_listings(njobs=4):
-    listings = IO.load_list("listings.txt")
+def _using_saved_listings(listloc, njobs=4):
+    listings = IO.load_list(listloc)
     scr = DetailsScraper(listings, njobs)
     scr.scrapeDetails()
     return scr.final_list
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--lf",help="""Load listings file for pre-scraped listings.""")
+parser.add_argument("--lo",help="""Save listings only and exit.""", action='store_true')
+parser.add_argument("--wait",help="""Seconds to wait before sending another request.""", type=int)
+parser.add_argument("--nworkers",help="""Number of workers for concurrent processing.""", type=int)
+
+args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    #results = _threading(njobs=128, wait = 10)
-    results = _using_saved_listings(njobs=128)
-    
+    if args.lo:
+        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait)
+        print("Listings scraped, saving listings.")
+        IO.save_list("listings.txt", listings)
+    elif args.lf:
+        print("Pre-scraped listings location is given, using list for scraping main details...")
+        results = _using_saved_listings(args.lf, njobs=args.nworkers)
+    else:
+        print("<<<-------Starting full scraper------->>>")
+        results = _full_scraper(njobs=args.nworkers, wait=args.wait)
+
     try:
         print("Using pandas for easier CSV extraction...")
         import pandas as pd

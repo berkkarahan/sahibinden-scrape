@@ -8,7 +8,7 @@ from requests import get, post
 
 class URLutils():
 
-    user_agent_list = [
+    self.user_agent_list = [
             # Chrome
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
             'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
@@ -36,7 +36,6 @@ class URLutils():
             'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)'
         ]
 
-    @classmethod
     def _standard_readURL(self, url):
         try:
             random_user_agent = random.choice(self.user_agent_list)
@@ -51,47 +50,40 @@ class URLutils():
                 print('Failed requesting url: ' + url)
             pass
 
-    @classmethod
     def _pixlr(self, url):
         if not url[-1:] == '/':
             url = url + '/'
-        return get('https://pixlr.com/proxy/?url='+url, headers = {'Accept-Encoding' : 'gzip'}, verify=False)
+        return get('https://pixlr.com/proxy/?url='+url, headers = {'Accept-Encoding' : 'gzip'}, verify=False).text
 
-    @classmethod
     def _code_beautify(url):
-        random_user_agent = random.choice(self.user_agent_list)
         headers = {
-        'User-Agent':random_user_agent,
+        'User-Agent':'Mozilla/5.0 (X11; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0',
         'Accept':'text/plain, */*; q=0.01',
         'Accept-Encoding':'gzip',
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
         'Origin' : 'https://codebeautify.org',
         'Connection' : 'close'
         }
-        return post('https://codebeautify.com/URLService', headers=headers, data='path=' + url, verify=False)
+        return post('https://codebeautify.com/URLService', headers=headers, data='path=' + url, verify=False).text
 
-    @classmethod
     def _photopea(url):
-        return get('https://www.photopea.com/mirror.php?url=' + url, verify=False)
+        return get('https://www.photopea.com/mirror.php?url=' + url, verify=False).text
 
-    @classmethod
     def readURL(self, url, mode='standard'):
         if mode == 'standard':
             return self._standard_readURL(url)
         elif mode == 'api':
-            response = random.choice([self._pixlr, self._code_beautify, self._photopea])(url)
-            if response.status_code == '404':
-                print('Failed requesting url: ' + url)
-            else:
-                return response.text
+            try:
+                response = random.choice([self._pixlr, self._code_beautify, self._photopea])(url)
+                return response
+            except:
+                print("APIs failed, falling back to default request mode.")
+                return self._standard_readURL(url)
 
-
-    @classmethod
     def delayedreadURL(self, url, lower_limit, upper_limit, mode='standard'):
         time.sleep(random.uniform(lower_limit,upper_limit))
         return self.readURL(url, mode)
 
-    @classmethod
     def choosebyXPath(self,page_content,xpath):
         root = html.fromstring(page_content)
         return root.xpath(xpath)[0].text
