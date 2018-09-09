@@ -5,10 +5,11 @@ import pickle
 
 from lxml import html
 from requests import get, post
+from selenium import webdriver
 
 class URLutils():
 
-    self.user_agent_list = [
+        self.user_agent_list = [
             # Chrome
             'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
             'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.90 Safari/537.36',
@@ -34,6 +35,10 @@ class URLutils():
             'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0)',
             'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; Trident/6.0)',
             'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)'
+        ]
+
+        self.slndrivers = [
+            webdriver.Chrome()
         ]
 
     def _standard_readURL(self, url):
@@ -79,6 +84,10 @@ class URLutils():
             except:
                 print("APIs failed, falling back to default request mode.")
                 return self._standard_readURL(url)
+        elif mode == 'selenium':
+            drv = random.choice(self.slndrivers)
+            drv.get(url)
+            return drv.page_source
 
     def delayedreadURL(self, url, lower_limit, upper_limit, mode='standard'):
         time.sleep(random.uniform(lower_limit,upper_limit))

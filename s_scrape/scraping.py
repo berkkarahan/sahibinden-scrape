@@ -1,5 +1,4 @@
 from s_scrape.base import Scraper
-from s_scrape.base import UPPER_DELAY, LOWER_DELAY
 from s_scrape.utils import URLutils, IO
 
 # scraping
@@ -8,14 +7,17 @@ from lxml import html
 
 import re
 
-
 class MainPageScraper(Scraper):
-    def __init__(self, n_jobs):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
+    def __init__(self, n_jobs, urlgetmode='standard'):
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, urlgetmode=urlgetmode)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
+
+        if self.urlgetmode == 'selenium':
+            print('Selenium for MainPageScraper is not yet implemented. Falling back to standard mode.')
+            self.urlgetmode = 'standard'
 
     @property
     def linklist(self):
@@ -30,9 +32,9 @@ class MainPageScraper(Scraper):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
+            c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
         else:
-            c = URLutils.readURL(url)
+            c = URLutils.readURL(url, mode=self.urlgetmode)
         soup = BeautifulSoup(c, "html.parser")
         subList = soup.find_all("li", {"class": "cl3"})
 
@@ -50,9 +52,9 @@ class MainPageScraper(Scraper):
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
+                c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
             else:
-                c = URLutils.readURL(url)
+                c = URLutils.readURL(url, mode=self.urlgetmode)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -73,7 +75,7 @@ class MainPageScraper(Scraper):
 
     def _get_listings_upperlimit(self, link):
         try:
-            c = URLutils.readURL(link)
+            c = URLutils.readURL(link, mode=self.urlgetmode)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
 
             tot = URLutils.choosebyXPath(c, xpth)
@@ -113,7 +115,7 @@ class MainPageScraper(Scraper):
 
     #Public methods
     def scrapeModels(self):
-        c = URLutils.readURL(self.link)
+        c = URLutils.readURL(self.link, mode=self.urlgetmode)
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
@@ -141,9 +143,8 @@ class MainPageScraper(Scraper):
         self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
-    def __init__(self, listings, n_jobs):
-
-        super().__init__(url="", njobs=n_jobs)
+    def __init__(self, listings, n_jobs, urlgetmode='standard'):
+        super().__init__(url="", njobs=n_jobs, urlgetmode=urlgetmode)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
@@ -176,7 +177,7 @@ class DetailsScraper(Scraper):
 
         car = {}
         print("----> Using xpath for scraping from url: %s" % url)
-        c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
+        c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
         try:
             root = html.fromstring(c)
 
@@ -231,7 +232,7 @@ class DetailsScraper(Scraper):
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = URLutils.delayedreadURL(url, LOWER_DELAY, UPPER_DELAY)
+        c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
 
         try:
             soup = BeautifulSoup(c, "html.parser")
