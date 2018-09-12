@@ -61,6 +61,9 @@ if __name__ == "__main__":
         urlmode = 'selenium'
     elif args.api:
         urlmode = 'api'
+    else:
+        print("No mode set for URLutils. Setting standard mode.")
+        urlmode = 'standard'
 
     if args.lo:
         listings = _scrape_listings(njobs=args.nworkers, wait=args.wait, mode=urlmode)

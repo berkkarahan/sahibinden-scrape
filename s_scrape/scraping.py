@@ -7,6 +7,8 @@ from lxml import html
 
 import re
 
+uutils = URLutils()
+
 class MainPageScraper(Scraper):
     def __init__(self, n_jobs, urlgetmode='standard'):
         super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, urlgetmode=urlgetmode)
@@ -14,6 +16,7 @@ class MainPageScraper(Scraper):
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
+        self.urlgetmode = urlgetmode
 
         if self.urlgetmode == 'selenium':
             print('Selenium for MainPageScraper is not yet implemented. Falling back to standard mode.')
@@ -32,9 +35,9 @@ class MainPageScraper(Scraper):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+            c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
         else:
-            c = URLutils.readURL(url, mode=self.urlgetmode)
+            c = uutils.readURL(url, mode=self.urlgetmode)
         soup = BeautifulSoup(c, "html.parser")
         subList = soup.find_all("li", {"class": "cl3"})
 
@@ -52,9 +55,9 @@ class MainPageScraper(Scraper):
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+                c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
             else:
-                c = URLutils.readURL(url, mode=self.urlgetmode)
+                c = uutils.readURL(url, mode=self.urlgetmode)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -75,10 +78,10 @@ class MainPageScraper(Scraper):
 
     def _get_listings_upperlimit(self, link):
         try:
-            c = URLutils.readURL(link, mode=self.urlgetmode)
+            c = uutils.readURL(link, mode=self.urlgetmode)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
 
-            tot = URLutils.choosebyXPath(c, xpth)
+            tot = uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
             tot = re.findall('\d+',tot)
             tot = int(tot[0])
@@ -88,8 +91,8 @@ class MainPageScraper(Scraper):
                 tot = 20
             return min(tot, 980)
         except:
-            print("Read error - upperlimit: " + link)
-            return 20
+           print("Read error - upperlimit: " + link)
+           return 20
 
     def _wrapperBatchRun_upperlimits(self):
         flat_list = IO.flatten_list(self.submodelurls)
@@ -115,7 +118,7 @@ class MainPageScraper(Scraper):
 
     #Public methods
     def scrapeModels(self):
-        c = URLutils.readURL(self.link, mode=self.urlgetmode)
+        c = uutils.readURL(self.link, mode=self.urlgetmode)
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
@@ -148,6 +151,7 @@ class DetailsScraper(Scraper):
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
+        self.urlgetmode = urlgetmode
 
         #Xpath references for posting details
         self.ilan_xpath = '//*[@id="classifiedId"]'
@@ -177,7 +181,7 @@ class DetailsScraper(Scraper):
 
         car = {}
         print("----> Using xpath for scraping from url: %s" % url)
-        c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
         try:
             root = html.fromstring(c)
 
@@ -232,7 +236,7 @@ class DetailsScraper(Scraper):
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = URLutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
 
         try:
             soup = BeautifulSoup(c, "html.parser")
