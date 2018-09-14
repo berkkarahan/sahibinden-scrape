@@ -1,5 +1,5 @@
 from s_scrape.base import Scraper
-from s_scrape.utils import URLutils, IO
+from s_scrape.io import IO
 
 # scraping
 from bs4 import BeautifulSoup
@@ -7,6 +7,8 @@ from lxml import html
 
 import re
 
+#quick workaround
+from s_scrape.srequests import URLreq as URLutils
 uutils = URLutils()
 
 class MainPageScraper(Scraper):
@@ -35,9 +37,9 @@ class MainPageScraper(Scraper):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+            c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         else:
-            c = uutils.readURL(url, mode=self.urlgetmode)
+            c = uutils.readURL(url)
         soup = BeautifulSoup(c, "html.parser")
         subList = soup.find_all("li", {"class": "cl3"})
 
@@ -55,9 +57,9 @@ class MainPageScraper(Scraper):
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+                c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
             else:
-                c = uutils.readURL(url, mode=self.urlgetmode)
+                c = uutils.readURL(url)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -78,7 +80,7 @@ class MainPageScraper(Scraper):
 
     def _get_listings_upperlimit(self, link):
         try:
-            c = uutils.readURL(link, mode=self.urlgetmode)
+            c = uutils.readURL(link)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
 
             tot = uutils.choosebyXPath(c, xpth)
@@ -118,7 +120,7 @@ class MainPageScraper(Scraper):
 
     #Public methods
     def scrapeModels(self):
-        c = uutils.readURL(self.link, mode=self.urlgetmode)
+        c = uutils.readURL(self.link)
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
@@ -181,7 +183,7 @@ class DetailsScraper(Scraper):
 
         car = {}
         print("----> Using xpath for scraping from url: %s" % url)
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         try:
             root = html.fromstring(c)
 
@@ -236,7 +238,7 @@ class DetailsScraper(Scraper):
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay, mode=self.urlgetmode)
+        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
 
         try:
             soup = BeautifulSoup(c, "html.parser")

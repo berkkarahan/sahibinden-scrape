@@ -1,6 +1,7 @@
 import threading
 import time
 import random
+from lxml import html
 
 class Scraper():
     def __init__(self,
@@ -61,8 +62,19 @@ class URLrequests():
         pass
 
     def readURL(self, url):
-        return self._readURL(url)
+        try:
+            return self._readURL(url)
+        except:
+            if url is None:
+                print('Url is none.')
+            else:
+                print('Failed requesting url: ' + url)
+            pass
 
     def delayedreadURL(self, url, lower_limit, upper_limit):
         time.sleep(random.uniform(lower_limit,upper_limit))
         return self.readURL(url)
+
+    def choosebyXPath(self, page_content, xpath):
+        root = html.fromstring(page_content)
+        return root.xpath(xpath)[0].text
