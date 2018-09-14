@@ -1,5 +1,6 @@
 import threading
-
+import time
+import random
 
 class Scraper():
     def __init__(self,
@@ -53,3 +54,15 @@ class Scraper():
             progress = end
             if progress > len(links):
                 progress = len(links)
+
+
+class URLrequests():
+    def __init__(self):
+        pass
+
+    def readURL(self, url):
+        return self._readURL(url)
+
+    def delayedreadURL(self, url, lower_limit, upper_limit):
+        time.sleep(random.uniform(lower_limit,upper_limit))
+        return self.readURL(url)
