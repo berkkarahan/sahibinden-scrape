@@ -8,21 +8,16 @@ from lxml import html
 import re
 
 #quick workaround
-from s_scrape.srequests import URLreq as URLutils
+from s_scrape.srequests import URLlib as URLutils
 uutils = URLutils()
 
 class MainPageScraper(Scraper):
-    def __init__(self, n_jobs, urlgetmode='standard'):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, urlgetmode=urlgetmode)
+    def __init__(self, n_jobs):
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
-        self.urlgetmode = urlgetmode
-
-        if self.urlgetmode == 'selenium':
-            print('Selenium for MainPageScraper is not yet implemented. Falling back to standard mode.')
-            self.urlgetmode = 'standard'
 
     @property
     def linklist(self):
@@ -148,12 +143,11 @@ class MainPageScraper(Scraper):
         self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
-    def __init__(self, listings, n_jobs, urlgetmode='standard'):
-        super().__init__(url="", njobs=n_jobs, urlgetmode=urlgetmode)
+    def __init__(self, listings, n_jobs):
+        super().__init__(url="", njobs=n_jobs)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
-        self.urlgetmode = urlgetmode
 
         #Xpath references for posting details
         self.ilan_xpath = '//*[@id="classifiedId"]'
