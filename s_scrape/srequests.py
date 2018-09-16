@@ -65,5 +65,6 @@ class URLsln(URLrequests):
 class URLreq(URLrequests):
     def __init__(self):
         super().__init__()
+        self.session = requests.Session()
     def _readURL(self, url):
-        return requests.get(url).content
+        return self.session.get(url).content
