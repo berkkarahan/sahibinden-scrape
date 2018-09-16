@@ -1,11 +1,11 @@
 import time
 import argparse
 from s_scrape.scraping import DetailsScraper, MainPageScraper
-from s_scrape.utils import IO
+from s_scrape.io import IO
 
-def _scrape_listings(njobs=4, wait=10, mode='standard'):
+def _scrape_listings(njobs=4, wait=10):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs, urlgetmode=mode)
+    mscr = MainPageScraper(njobs)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
@@ -16,9 +16,9 @@ def _scrape_listings(njobs=4, wait=10, mode='standard'):
     mscr.scrapeListings()
     return mscr.listings
 
-def _full_scraper(njobs=4, wait = 10, mode='standard'):
+def _full_scraper(njobs=4, wait = 10):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs, urlgetmode=mode)
+    mscr = MainPageScraper(njobs)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
@@ -28,16 +28,16 @@ def _full_scraper(njobs=4, wait = 10, mode='standard'):
     time.sleep(wait)
     mscr.scrapeListings()
     IO.save_list("listings.txt", mscr.listings)
-    scr = DetailsScraper(mscr.listings, njobs, urlgetmode=mode)
+    scr = DetailsScraper(mscr.listings, njobs)
     print("Waiting %d seconds before scraping listings..." %wait)
     time.sleep(wait)
     scr.scrapeDetails()
     return scr.final_list
 
 
-def _using_saved_listings(listloc, njobs=4, mode='standard'):
+def _using_saved_listings(listloc, njobs=4):
     listings = IO.load_list(listloc)
-    scr = DetailsScraper(listings, njobs, urlgetmode=mode)
+    scr = DetailsScraper(listings, njobs)
     scr.scrapeDetails()
     return scr.final_list
 
@@ -66,15 +66,15 @@ if __name__ == "__main__":
         urlmode = 'standard'
 
     if args.lo:
-        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait, mode=urlmode)
+        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait)
         print("Listings scraped, saving listings.")
         IO.save_list("listings.txt", listings)
     elif args.lf:
         print("Pre-scraped listings location is given, using list for scraping main details...")
-        results = _using_saved_listings(args.lf, njobs=args.nworkers, mode=urlmode)
+        results = _using_saved_listings(args.lf, njobs=args.nworkers)
     else:
         print("<<<-------Starting full scraper------->>>")
-        results = _full_scraper(njobs=args.nworkers, wait=args.wait, mode=urlmode)
+        results = _full_scraper(njobs=args.nworkers, wait=args.wait)
 
     try:
         print("Using pandas for easier CSV extraction...")

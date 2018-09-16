@@ -7,14 +7,11 @@ class Scraper():
     def __init__(self,
                 url="",
                 njobs=4,
-                urlgetmode='standard',
                 upperdelay = 0.8,
                 lowerdelay = 0.5):
         self._link = url
         self._njobs = njobs
 
-        #Scraper specific options
-        self.urlgetmode = urlgetmode
         #Delay limits for delayedreadURL
         self.upperdelay = upperdelay
         self.lowerdelay = lowerdelay
@@ -27,7 +24,7 @@ class Scraper():
         # For item i in a range that is a length of l,
         for i in range(0, len(l), njobs):
             # Create an index range for l of n items:
-            yield l[i:i+n]
+            yield l[i:i+njobs]
 
 
     def _threader(self, func, urllist):
