@@ -1,13 +1,23 @@
 import threading
-
-#Delay constants for reading URLs with uniform random wait time
-LOWER_DELAY = 0.5
-UPPER_DELAY = 0.8
+import time
+import random
+from lxml import html
 
 class Scraper():
-    def __init__(self, url="", njobs=4):
+    def __init__(self,
+                url="",
+                njobs=4,
+                urlgetmode='standard',
+                upperdelay = 0.8,
+                lowerdelay = 0.5):
         self._link = url
         self._njobs = njobs
+
+        #Scraper specific options
+        self.urlgetmode = urlgetmode
+        #Delay limits for delayedreadURL
+        self.upperdelay = upperdelay
+        self.lowerdelay = lowerdelay
 
     @property
     def link(self):
@@ -45,3 +55,26 @@ class Scraper():
             progress = end
             if progress > len(links):
                 progress = len(links)
+
+
+class URLrequests():
+    def __init__(self):
+        pass
+
+    def readURL(self, url):
+        try:
+            return self._readURL(url)
+        except:
+            if url is None:
+                print('Url is none.')
+            else:
+                print('Failed requesting url: ' + url)
+            pass
+
+    def delayedreadURL(self, url, lower_limit, upper_limit):
+        time.sleep(random.uniform(lower_limit,upper_limit))
+        return self.readURL(url)
+
+    def choosebyXPath(self, page_content, xpath):
+        root = html.fromstring(page_content)
+        return root.xpath(xpath)[0].text

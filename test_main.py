@@ -1,5 +1,5 @@
 from s_scrape.scraping import DetailsScraper, MainPageScraper
-from s_scrape.utils import IO
+from s_scrape.io import IO
 
 listingswait = 5
 mainwait = 15
