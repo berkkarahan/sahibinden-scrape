@@ -68,3 +68,19 @@ class URLreq(URLrequests):
         self.session = requests.Session()
     def _readURL(self, url):
         return self.session.get(url).content
+
+
+class MultipleRequests(URLrequests):
+    def __init__(self, njobs):
+        super().__init__(bypassdelayed=True)
+        self.njobs = njobs
+        self.sessions = [requests.Session() for _ in range(0,self.njobs)]
+        self._next = 0
+
+    def _readURL(self,url):
+        c = self.sessions[0].get(url).content
+        if self._next + 1 == self.njobs:
+            self._next = 0
+        else:
+            self._next = self._next + 1
+        return c

@@ -8,16 +8,17 @@ from lxml import html
 import re
 
 #quick workaround
-from s_scrape.srequests import URLlib as URLutils
-uutils = URLutils()
+#from s_scrape.srequests import URLreq as URLutils
+#uutils = URLutils()
 
 class MainPageScraper(Scraper):
-    def __init__(self, n_jobs):
+    def __init__(self, n_jobs, uutils):
         super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
+        self.uutils=uutils
 
     @property
     def linklist(self):
@@ -32,9 +33,9 @@ class MainPageScraper(Scraper):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+            c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         else:
-            c = uutils.readURL(url)
+            c = self.uutils.readURL(url)
         soup = BeautifulSoup(c, "html.parser")
         subList = soup.find_all("li", {"class": "cl3"})
 
@@ -52,9 +53,9 @@ class MainPageScraper(Scraper):
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+                c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
             else:
-                c = uutils.readURL(url)
+                c = self.uutils.readURL(url)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -75,10 +76,10 @@ class MainPageScraper(Scraper):
 
     def _get_listings_upperlimit(self, link):
         try:
-            c = uutils.readURL(link)
+            c = self.uutils.readURL(link)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
 
-            tot = uutils.choosebyXPath(c, xpth)
+            tot = self.uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
             tot = re.findall('\d+',tot)
             tot = int(tot[0])
@@ -115,7 +116,7 @@ class MainPageScraper(Scraper):
 
     #Public methods
     def scrapeModels(self):
-        c = uutils.readURL(self.link)
+        c = self.uutils.readURL(self.link)
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
@@ -143,11 +144,12 @@ class MainPageScraper(Scraper):
         self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
-    def __init__(self, listings, n_jobs):
+    def __init__(self, listings, n_jobs, uutils):
         super().__init__(url="", njobs=n_jobs)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
+        self.uutils=uutils
 
         #Xpath references for posting details
         self.ilan_xpath = '//*[@id="classifiedId"]'
@@ -177,7 +179,7 @@ class DetailsScraper(Scraper):
 
         car = {}
         print("----> Using xpath for scraping from url: %s" % url)
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+        c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         try:
             root = html.fromstring(c)
 
@@ -232,7 +234,7 @@ class DetailsScraper(Scraper):
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+        c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
 
         try:
             soup = BeautifulSoup(c, "html.parser")

@@ -55,8 +55,8 @@ class Scraper():
 
 
 class URLrequests():
-    def __init__(self):
-        pass
+    def __init__(self,bypassdelayed=False):
+        self.bypassdelayed=bypassdelayed
 
     def readURL(self, url):
         try:
@@ -69,8 +69,11 @@ class URLrequests():
             pass
 
     def delayedreadURL(self, url, lower_limit, upper_limit):
-        time.sleep(random.uniform(lower_limit,upper_limit))
-        return self.readURL(url)
+        if self.bypassdelayed:
+            return self._readURL
+        else:
+            time.sleep(random.uniform(lower_limit,upper_limit))
+            return self.readURL(url)
 
     def choosebyXPath(self, page_content, xpath):
         root = html.fromstring(page_content)
