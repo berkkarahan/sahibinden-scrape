@@ -31,7 +31,7 @@ class Scraper():
         threads = []
         #initialize threads
         for url in urllist:
-            task = threading.Thread(target=func, args=(url,))
+            task = threading.Thread(target=func, args=(url,), daemon=True)
             threads.append(task)
         #start threads
         for thread in threads:
@@ -55,7 +55,7 @@ class Scraper():
 
 
 class URLrequests():
-    def __init__(self,bypassdelayed=False):
+    def __init__(self, bypassdelayed=False):
         self.bypassdelayed=bypassdelayed
 
     def readURL(self, url):

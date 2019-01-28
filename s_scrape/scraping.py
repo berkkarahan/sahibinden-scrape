@@ -12,8 +12,8 @@ import re
 #uutils = URLutils()
 
 class MainPageScraper(Scraper):
-    def __init__(self, n_jobs, uutils):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
+    def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, lowerdelay=lowerdelay, upperdelay=upperdelay)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
@@ -144,8 +144,8 @@ class MainPageScraper(Scraper):
         self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
-    def __init__(self, listings, n_jobs, uutils):
-        super().__init__(url="", njobs=n_jobs)
+    def __init__(self, listings, n_jobs, uutils, lowerdelay=1, upperdelay=5):
+        super().__init__(url="", njobs=n_jobs, lowerdelay=lowerdelay, upperdelay=5)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
