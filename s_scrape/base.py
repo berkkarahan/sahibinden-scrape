@@ -1,5 +1,6 @@
 import threading
 import time
+import sys
 import random
 from lxml import html
 
@@ -31,7 +32,7 @@ class Scraper():
         threads = []
         #initialize threads
         for url in urllist:
-            task = threading.Thread(target=func, args=(url,))
+            task = threading.Thread(target=func, args=(url,), daemon=True)
             threads.append(task)
         #start threads
         for thread in threads:
@@ -55,8 +56,8 @@ class Scraper():
 
 
 class URLrequests():
-    def __init__(self):
-        pass
+    def __init__(self, bypassdelayed=False):
+        self.bypassdelayed=bypassdelayed
 
     def readURL(self, url):
         try:
@@ -69,9 +70,20 @@ class URLrequests():
             pass
 
     def delayedreadURL(self, url, lower_limit, upper_limit):
-        time.sleep(random.uniform(lower_limit,upper_limit))
-        return self.readURL(url)
+        if self.bypassdelayed:
+            return self._readURL
+        else:
+            time.sleep(random.uniform(lower_limit,upper_limit))
+            return self.readURL(url)
 
     def choosebyXPath(self, page_content, xpath):
         root = html.fromstring(page_content)
         return root.xpath(xpath)[0].text
+
+
+def xpathSafeRead(pageroot, xpath, field):
+    try:
+        return pageroot.xpath(xpath)[0].text.strip()
+    except:
+        print("Encountered ", sys.exc_info(), " while reading field: ", field)
+        return 'NA'

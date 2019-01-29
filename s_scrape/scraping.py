@@ -1,4 +1,4 @@
-from s_scrape.base import Scraper
+from s_scrape.base import Scraper, xpathSafeRead
 from s_scrape.io import IO
 
 # scraping
@@ -6,18 +6,20 @@ from bs4 import BeautifulSoup
 from lxml import html
 
 import re
+import sys
 
 #quick workaround
-from s_scrape.srequests import URLlib as URLutils
-uutils = URLutils()
+#from s_scrape.srequests import URLreq as URLutils
+#uutils = URLutils()
 
 class MainPageScraper(Scraper):
-    def __init__(self, n_jobs):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs)
+    def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, lowerdelay=lowerdelay, upperdelay=upperdelay)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
+        self.uutils=uutils
 
     @property
     def linklist(self):
@@ -32,9 +34,9 @@ class MainPageScraper(Scraper):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+            c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         else:
-            c = uutils.readURL(url)
+            c = self.uutils.readURL(url)
         soup = BeautifulSoup(c, "html.parser")
         subList = soup.find_all("li", {"class": "cl3"})
 
@@ -52,9 +54,9 @@ class MainPageScraper(Scraper):
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+                c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
             else:
-                c = uutils.readURL(url)
+                c = self.uutils.readURL(url)
             soup = BeautifulSoup(c, "html.parser")
             listitems = soup.find_all("tr", {"class": "searchResultsItem"})
 
@@ -75,10 +77,10 @@ class MainPageScraper(Scraper):
 
     def _get_listings_upperlimit(self, link):
         try:
-            c = uutils.readURL(link)
+            c = self.uutils.readURL(link)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
 
-            tot = uutils.choosebyXPath(c, xpth)
+            tot = self.uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
             tot = re.findall('\d+',tot)
             tot = int(tot[0])
@@ -115,7 +117,7 @@ class MainPageScraper(Scraper):
 
     #Public methods
     def scrapeModels(self):
-        c = uutils.readURL(self.link)
+        c = self.uutils.readURL(self.link)
         soup = BeautifulSoup(c, "html.parser")
         ctgList = soup.find_all("ul", {"class": "categoryList"})
         carList = ctgList[0].find_all("li")
@@ -143,11 +145,12 @@ class MainPageScraper(Scraper):
         self.batchrun(self._wrapperBatchRun_appendlistings,links)
 
 class DetailsScraper(Scraper):
-    def __init__(self, listings, n_jobs):
-        super().__init__(url="", njobs=n_jobs)
+    def __init__(self, listings, n_jobs, uutils, lowerdelay=1, upperdelay=5):
+        super().__init__(url="", njobs=n_jobs, lowerdelay=lowerdelay, upperdelay=5)
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
+        self.uutils=uutils
 
         #Xpath references for posting details
         self.ilan_xpath = '//*[@id="classifiedId"]'
@@ -177,36 +180,59 @@ class DetailsScraper(Scraper):
 
         car = {}
         print("----> Using xpath for scraping from url: %s" % url)
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+        c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         try:
             root = html.fromstring(c)
 
-            car['clsid'] = root.xpath(self.ilan_xpath)[0].text.strip()
-            car['IlanTarihi'] = root.xpath(self.ilantarihi_xpath)[0].text.strip()
-            car['Marka'] = root.xpath(self.marka_xpath)[0].text.strip()
-            car['Seri'] = root.xpath(self.seri_xpath)[0].text.strip()
-            car['Model'] = root.xpath(self.model_xpath)[0].text.strip()
-            car['Yil'] = root.xpath(self.yil_xpath)[0].text.strip()
-            car['Yakit'] = root.xpath(self.yakit_xpath)[0].text.strip()
-            car['Vites'] = root.xpath(self.vites_xpath)[0].text.strip()
-            car['Km'] = root.xpath(self.km_xpath)[0].text.strip()
-            car['Motor Gucu'] = root.xpath(self.motorgucu_xpath)[0].text.strip()
-            car['Motor Hacmi'] = root.xpath(self.motorhacmi_xpath)[0].text.strip()
-            car['Cekis'] = root.xpath(self.cekis_xpath)[0].text.strip()
-            #car['Kapi'] = root.xpath(self.kapi_xpath)[0].text.strip() #kapi xpath not defined
-            car['Renk'] = root.xpath(self.renk_xpath)[0].text.strip()
-            car['Garanti'] = root.xpath(self.garanti_xpath)[0].text.strip()
-            car['Hasar Durumu'] = root.xpath(self.hasar_xpath)[0].text.strip()
-            car['Plaka / Uyruk'] = root.xpath(self.plakauyruk_xpath)[0].text.strip()
-            car['Kimden'] = root.xpath(self.kimden_xpath)[0].text.strip()
-            car['Takas'] = root.xpath(self.takas_xpath)[0].text.strip()
-            car['Durumu'] = root.xpath(self.durum_xpath)[0].text.strip()
-            car['Fiyat'] = root.xpath(self.fiyat_xpath)[0].text.strip()
+            # car['clsid'] = root.xpath(self.ilan_xpath)[0].text.strip()
+            # car['IlanTarihi'] = root.xpath(self.ilantarihi_xpath)[0].text.strip()
+            # car['Marka'] = root.xpath(self.marka_xpath)[0].text.strip()
+            # car['Seri'] = root.xpath(self.seri_xpath)[0].text.strip()
+            # car['Model'] = root.xpath(self.model_xpath)[0].text.strip()
+            # car['Yil'] = root.xpath(self.yil_xpath)[0].text.strip()
+            # car['Yakit'] = root.xpath(self.yakit_xpath)[0].text.strip()
+            # car['Vites'] = root.xpath(self.vites_xpath)[0].text.strip()
+            # car['Km'] = root.xpath(self.km_xpath)[0].text.strip()
+            # car['Motor Gucu'] = root.xpath(self.motorgucu_xpath)[0].text.strip()
+            # car['Motor Hacmi'] = root.xpath(self.motorhacmi_xpath)[0].text.strip()
+            # car['Cekis'] = root.xpath(self.cekis_xpath)[0].text.strip()
+            # #car['Kapi'] = root.xpath(self.kapi_xpath)[0].text.strip() #kapi xpath not defined
+            # car['Renk'] = root.xpath(self.renk_xpath)[0].text.strip()
+            # car['Garanti'] = root.xpath(self.garanti_xpath)[0].text.strip()
+            # car['Hasar Durumu'] = root.xpath(self.hasar_xpath)[0].text.strip()
+            # car['Plaka / Uyruk'] = root.xpath(self.plakauyruk_xpath)[0].text.strip()
+            # car['Kimden'] = root.xpath(self.kimden_xpath)[0].text.strip()
+            # car['Takas'] = root.xpath(self.takas_xpath)[0].text.strip()
+            # car['Durumu'] = root.xpath(self.durum_xpath)[0].text.strip()
+            # car['Fiyat'] = root.xpath(self.fiyat_xpath)[0].text.strip()
+
+            car['clsid'] = xpathSafeRead(root, self.ilan_xpath, 'ilan.')
+            car['IlanTarihi'] = xpathSafeRead(root, self.ilantarihi_xpath, 'ilan tarihi.')
+            car['Marka'] = xpathSafeRead(root, self.marka_xpath, 'marka.')#root.xpath(self.marka_xpath)[0].text.strip()
+            car['Seri'] = xpathSafeRead(root, self.seri_xpath, 'seri.')
+            car['Model'] = xpathSafeRead(root, self.model_xpath, 'model.')
+            car['Yil'] = xpathSafeRead(root, self.yil_xpath, 'yil.')
+            car['Yakit'] = xpathSafeRead(root, self.yakit_xpath, 'yakit.')
+            car['Vites'] = xpathSafeRead(root, self.vites_xpath, 'vites')
+            car['Km'] = xpathSafeRead(root, self.km_xpath, 'km.')
+            car['Motor Gucu'] = xpathSafeRead(root, self.motorgucu_xpath, 'motor gucu.')
+            car['Motor Hacmi'] = xpathSafeRead(root, self.motorhacmi_xpath, 'motor hacmi.')
+            car['Cekis'] = xpathSafeRead(root, self.cekis_xpath, 'cekis.')
+            # #car['Kapi'] = root.xpath(self.kapi_xpath)[0].text.strip() #kapi xpath not defined
+            car['Renk'] = xpathSafeRead(root, self.renk_xpath, 'renk.')
+            car['Garanti'] = xpathSafeRead(root, self.garanti_xpath, 'garanti.')
+            car['Hasar Durumu'] = xpathSafeRead(root, self.hasar_xpath, 'hasar durumu.')
+            car['Plaka / Uyruk'] = xpathSafeRead(root, self.plakauyruk_xpath, 'plaka/uyruk.')
+            car['Kimden'] = xpathSafeRead(root, self.kimden_xpath, 'kimden.')
+            car['Takas'] = xpathSafeRead(root, self.takas_xpath, 'takas.')
+            car['Durumu'] = xpathSafeRead(root, self.durum_xpath, 'durumu.')
+            car['Fiyat'] = xpathSafeRead(root, self.fiyat_xpath, 'fiyat.')
+
             print(car)
             print(" **** Processing complete **** ")
             return car
         except:
-            pass
+            print(sys.exc_info()[0], " occured.")
 
     def _get_details_from_url(self, url):
 
@@ -232,7 +258,7 @@ class DetailsScraper(Scraper):
                      19: 'Durumu'}
 
         print("----> Scraping car post details from url: %s" % (url))
-        c = uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+        c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
 
         try:
             soup = BeautifulSoup(c, "html.parser")
@@ -268,4 +294,12 @@ class DetailsScraper(Scraper):
             return self._get_details_from_url(url)
 
     def scrapeDetails(self):
-        self.batchrun(self._wrapperBatchRun, self.listings)
+        #hotfix!
+        finlist = []
+        for itm in self.listings:
+            if type(itm) == list:
+                for j in itm:
+                    finlist.append(j)
+            else:
+                finlist.append(itm)
+        self.batchrun(self._wrapperBatchRun, finlist)

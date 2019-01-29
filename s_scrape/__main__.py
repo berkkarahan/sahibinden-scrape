@@ -3,41 +3,41 @@ import argparse
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.io import IO
 
-def _scrape_listings(njobs=4, wait=10):
+def _scrape_listings(njobs=4, lowerdelay=1, upperdelay=2, uutils=None):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs)
+    mscr = MainPageScraper(njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
     mscr.scrapeSubModels()
     print("Sub car models scraped...")
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     mscr.scrapeListings()
     return mscr.listings
 
-def _full_scraper(njobs=4, wait = 10):
+def _full_scraper(njobs=4, lowerdelay=1, upperdelay=2, uutils=None):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs)
+    mscr = MainPageScraper(njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
     mscr.scrapeSubModels()
     print("Sub car models scraped...")
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     mscr.scrapeListings()
     IO.save_list("listings.txt", mscr.listings)
-    scr = DetailsScraper(mscr.listings, njobs)
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    scr = DetailsScraper(mscr.listings, njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     scr.scrapeDetails()
     return scr.final_list
 
 
-def _using_saved_listings(listloc, njobs=4):
+def _using_saved_listings(listloc, njobs=4, uutils=None):
     listings = IO.load_list(listloc)
-    scr = DetailsScraper(listings, njobs)
+    scr = DetailsScraper(listings, njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     scr.scrapeDetails()
     return scr.final_list
 
@@ -59,22 +59,26 @@ if __name__ == "__main__":
         urlmode = 'standard'
     elif args.sln:
         urlmode = 'selenium'
+        from s_scrape.srequests import URLsln
+        u = URLsln()
     elif args.api:
         urlmode = 'api'
     else:
         print("No mode set for URLutils. Setting standard mode.")
         urlmode = 'standard'
+        from s_scrape.srequests import URLlib
+        u = URLlib()
 
     if args.lo:
-        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait)
+        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait, uutils=u)
         print("Listings scraped, saving listings.")
         IO.save_list("listings.txt", listings)
     elif args.lf:
         print("Pre-scraped listings location is given, using list for scraping main details...")
-        results = _using_saved_listings(args.lf, njobs=args.nworkers)
+        results = _using_saved_listings(args.lf, njobs=args.nworkers, uutils=u)
     else:
         print("<<<-------Starting full scraper------->>>")
-        results = _full_scraper(njobs=args.nworkers, wait=args.wait)
+        results = _full_scraper(njobs=args.nworkers, wait=args.wait, uutils=u)
 
     try:
         print("Using pandas for easier CSV extraction...")
