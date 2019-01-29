@@ -1,5 +1,6 @@
 import threading
 import time
+import sys
 import random
 from lxml import html
 
@@ -78,3 +79,11 @@ class URLrequests():
     def choosebyXPath(self, page_content, xpath):
         root = html.fromstring(page_content)
         return root.xpath(xpath)[0].text
+
+
+def xpathSafeRead(pageroot, xpath, field):
+    try:
+        return pageroot.xpath(xpath)[0].text.strip()
+    except:
+        print("Encountered ", sys.exc_info(), " while reading field: ", field)
+        return 'NA'

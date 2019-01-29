@@ -3,41 +3,41 @@ import argparse
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.io import IO
 
-def _scrape_listings(njobs=4, wait=10, uutils=None):
+def _scrape_listings(njobs=4, lowerdelay=1, upperdelay=2, uutils=None):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs, uutils)
+    mscr = MainPageScraper(njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
     mscr.scrapeSubModels()
     print("Sub car models scraped...")
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     mscr.scrapeListings()
     return mscr.listings
 
-def _full_scraper(njobs=4, wait = 10, uutils=None):
+def _full_scraper(njobs=4, lowerdelay=1, upperdelay=2, uutils=None):
     print("Total threads: %s"%str(njobs))
-    mscr = MainPageScraper(njobs, uutils)
+    mscr = MainPageScraper(njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     print("Scraping started...")
     mscr.scrapeModels()
     print("Main car models scraped...")
     mscr.scrapeSubModels()
     print("Sub car models scraped...")
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     mscr.scrapeListings()
     IO.save_list("listings.txt", mscr.listings)
-    scr = DetailsScraper(mscr.listings, njobs, uutils)
-    print("Waiting %d seconds before scraping listings..." %wait)
-    time.sleep(wait)
+    scr = DetailsScraper(mscr.listings, njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
+    print("Waiting %d seconds before scraping listings..." %(10))
+    time.sleep(10)
     scr.scrapeDetails()
     return scr.final_list
 
 
 def _using_saved_listings(listloc, njobs=4, uutils=None):
     listings = IO.load_list(listloc)
-    scr = DetailsScraper(listings, njobs, uutils)
+    scr = DetailsScraper(listings, njobs, uutils, lowerdelay=lowerdelay, upperdelay=upperdelay)
     scr.scrapeDetails()
     return scr.final_list
 
@@ -54,19 +54,20 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    from s_scrape.srequests import MultipleRequests
-    u = MultipleRequests(args.nworkers)
-
     if args.sln and args.api:
         print("Can't set both selenium and api to True, falling back to standard mode.")
         urlmode = 'standard'
     elif args.sln:
         urlmode = 'selenium'
+        from s_scrape.srequests import URLsln
+        u = URLsln()
     elif args.api:
         urlmode = 'api'
     else:
         print("No mode set for URLutils. Setting standard mode.")
         urlmode = 'standard'
+        from s_scrape.srequests import URLlib
+        u = URLlib()
 
     if args.lo:
         listings = _scrape_listings(njobs=args.nworkers, wait=args.wait, uutils=u)
