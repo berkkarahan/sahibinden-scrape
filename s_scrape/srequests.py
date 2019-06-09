@@ -1,4 +1,5 @@
 from s_scrape.base import URLrequests
+from s_scrape.api import routed
 
 #urllib requirements
 import urllib
@@ -84,3 +85,15 @@ class MultipleRequests(URLrequests):
         else:
             self._next = self._next + 1
         return c
+
+class APIreq(URLrequests):
+    def __init__(self):
+        super().__init__()
+    def _readURL(self, url):
+        try:
+            return routed(url)
+        except:
+            print("!Failed requesting from api, using urllib!")
+            req = urllib.request.Request(url)
+            response = urllib.request.urlopen(req)
+            return response.read()

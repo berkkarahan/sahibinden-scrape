@@ -13,3 +13,8 @@ u = URLlib()
 u.readURL(url)
 
 requests.get('https://www.photopea.com/mirror.php?url=' + url, verify=False).text
+
+from s_scrape.api import routed
+
+r = routed(url)
+r
