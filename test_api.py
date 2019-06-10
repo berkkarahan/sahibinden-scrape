@@ -17,4 +17,3 @@ requests.get('https://www.photopea.com/mirror.php?url=' + url, verify=False).tex
 from s_scrape.api import routed
 
 r = routed(url)
-r

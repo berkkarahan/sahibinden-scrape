@@ -4,6 +4,9 @@ from requests import get, post
 
 def routed(url):
 
+    def facebook(url):
+        return get('https://developers.facebook.com/tools/debug/echo/?q=' + url, verify=False).text
+
     def pixlr(url):
         if not url[-1:] == '/':
             url = url + '/'
@@ -26,5 +29,5 @@ def routed(url):
         }
         return post('https://codebeautify.com/URLService', headers=headers, data='path=' + url, verify=False).text
 
-    response = random.choice([pixlr, photopea, code_beautify])(url)
+    response = random.choice([facebook, pixlr, photopea, code_beautify])(url)
     return response
