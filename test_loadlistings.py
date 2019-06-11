@@ -16,7 +16,7 @@ for itm in listings:
     else:
         finlist.append(itm)
 
-scr = DetailsScraper(finlist, 32, ureq, lowerdelay=1, upperdelay=2)
+scr = DetailsScraper(finlist, 8, ureq, lowerdelay=2, upperdelay=5)
 print("Scraping items from loaded listings...")
 scr.scrapeDetails()
 results = scr.final_list

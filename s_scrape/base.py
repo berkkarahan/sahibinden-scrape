@@ -2,6 +2,7 @@ import threading
 import time
 import sys
 import random
+import requests
 from lxml import html
 
 class Scraper():
@@ -58,6 +59,38 @@ class Scraper():
 class URLrequests():
     def __init__(self, bypassdelayed=False):
         self.bypassdelayed=bypassdelayed
+
+    def _facebook(self, url):
+        return requests.get('https://developers.facebook.com/tools/debug/echo/?q=' + url, verify=False).text
+
+    def _code_beautify(self, url):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:61.0) Gecko/20100101 Firefox/61.0',
+            'Accept': 'text/plain, */*; q=0.01',
+            'Accept-Encoding': 'gzip',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'Origin': 'https://codebeautify.org',
+            'Connection': 'close',
+        }
+        return requests.post('https://codebeautify.com/URLService', headers=headers, data='path=' + url, verify=False).text
+
+    def _photopea(self, url):
+        return requests.get('https://www.photopea.com/mirror.php?url=' + url, verify=False).text
+
+    def _apireadURL(self, url):
+        apilist = [self._facebook, self._code_beautify, self._photopea]
+        upper = random.randint(0, len(apilist))
+        #while apilist and request_not_succesful:
+        for _ in range(0,len(apilist)):
+            idx = random.randint(0, upper)
+            upper = random.randint(0, len(apilist))
+            try:
+                content = apilist[idx](url)
+                break
+            except:
+                apilist.pop(idx)
+        return content
+
 
     def readURL(self, url):
         try:

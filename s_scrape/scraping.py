@@ -7,6 +7,7 @@ from lxml import html
 
 import re
 import sys
+import threading
 
 #quick workaround
 #from s_scrape.srequests import URLreq as URLutils
@@ -19,7 +20,8 @@ class MainPageScraper(Scraper):
         self.submodelurls = []
         self._listings = []
         self.n_jobs = n_jobs
-        self.uutils=uutils
+        self.uutils = uutils
+        self.lock = threading.Lock()
 
     @property
     def linklist(self):
@@ -52,7 +54,7 @@ class MainPageScraper(Scraper):
             pass
         try:
             print("----> Scraping listings from url: %s" % (url))
-            listings_list = []
+            #listings_list = []
             if url_delayed:
                 c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
             else:
@@ -66,7 +68,10 @@ class MainPageScraper(Scraper):
                     a_curr = cur.a
                     print('Link posting: ' + a_curr['href'])
                     ret_str = "https://www.sahibinden.com" + a_curr['href']
-                    listings_list.append(ret_str)
+                    #listings_list.append(ret_str)
+                    self.lock.acquire()
+                    self._listings.append(ret_str)
+                    self.lock.release()
                 except:
                     print('Read error in: ' + str(i))
 
@@ -79,6 +84,7 @@ class MainPageScraper(Scraper):
         try:
             c = self.uutils.readURL(link)
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
+            xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[2]/div/div[1]/span'
 
             tot = self.uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
@@ -109,7 +115,8 @@ class MainPageScraper(Scraper):
         return links
 
     def _wrapperBatchRun_appendlistings(self, url):
-        self._listings.append(self._get_listings_from_page(url))
+        #self._listings.append(self._get_listings_from_page(url))
+        self._get_listings_from_page(url)
 
     def _wrapperBatchRun_scrapeModels(self, car):
         tmp = car.find("a", href=True)
@@ -293,7 +300,7 @@ class DetailsScraper(Scraper):
         elif method =='soup':
             return self._get_details_from_url(url)
 
-    def scrapeDetails(self):
+    def _old_scrapeDetails(self):
         #hotfix!
         finlist = []
         for itm in self.listings:
@@ -303,3 +310,16 @@ class DetailsScraper(Scraper):
             else:
                 finlist.append(itm)
         self.batchrun(self._wrapperBatchRun, finlist)
+
+    def scrapeDetails(self):
+        '''from random import shuffle
+        l = shuffle(self.listings)'''
+        #random shuffle doesnt work right now
+        self.batchrun(self._wrapperBatchRun, self.listings)
+
+    def scrapeDetails2(self):
+        from s_scrape.utils import flatten
+        from random import shuffle
+        fl = flatten(self.listings)
+        fl = shuffle(fl)
+        self.batchrun(self._wrapperBatchRun, fl)
