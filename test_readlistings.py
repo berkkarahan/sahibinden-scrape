@@ -5,7 +5,7 @@ import itertools
 
 ureq = URLlib()
 
-listings = IO.load_list('listings_flattened.txt')
+listings = IO.load_list('listings_10-6-2019.txt')
 scr = DetailsScraper(listings, 16, ureq, lowerdelay=3, upperdelay=16)
 scr.scrapeDetails()
 

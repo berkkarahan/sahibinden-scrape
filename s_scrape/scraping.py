@@ -312,9 +312,10 @@ class DetailsScraper(Scraper):
         self.batchrun(self._wrapperBatchRun, finlist)
 
     def scrapeDetails(self):
-        from random import shuffle
-        l = shuffle(self.listings)
-        self.batchrun(self._wrapperBatchRun, l)
+        '''from random import shuffle
+        l = shuffle(self.listings)'''
+        #random shuffle doesnt work right now
+        self.batchrun(self._wrapperBatchRun, self.listings)
 
     def scrapeDetails2(self):
         from s_scrape.utils import flatten

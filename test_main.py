@@ -1,6 +1,6 @@
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.io import IO
-from s_scrape.srequests import URLlib, URLreq, URLsln, MultipleRequests
+from s_scrape.srequests import URLlib, URLreq, URLsln
 
 import time
 import datetime
