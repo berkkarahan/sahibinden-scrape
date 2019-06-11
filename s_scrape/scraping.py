@@ -9,10 +9,6 @@ import re
 import sys
 import threading
 
-#quick workaround
-#from s_scrape.srequests import URLreq as URLutils
-#uutils = URLutils()
-
 class MainPageScraper(Scraper):
     def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
         super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, lowerdelay=lowerdelay, upperdelay=upperdelay)
@@ -54,7 +50,6 @@ class MainPageScraper(Scraper):
             pass
         try:
             print("----> Scraping listings from url: %s" % (url))
-            #listings_list = []
             if url_delayed:
                 c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
             else:
@@ -68,7 +63,6 @@ class MainPageScraper(Scraper):
                     a_curr = cur.a
                     print('Link posting: ' + a_curr['href'])
                     ret_str = "https://www.sahibinden.com" + a_curr['href']
-                    #listings_list.append(ret_str)
                     self.lock.acquire()
                     self._listings.append(ret_str)
                     self.lock.release()
@@ -135,17 +129,6 @@ class MainPageScraper(Scraper):
 
     def scrapeSubModels(self):
         self.batchrun(self._wrapperBatchRun_scrapeSubModels, self._modelurls)
-        #if method == 'runtime':
-        #    with Pool(self.n_jobs) as pool:
-        #        self.submodelurls = pool.map(self._get_submodels_from_page, self._modelurls)
-        #elif method == 'test':
-        #    with Parallel(n_jobs=self.n_jobs, backend="threading") as Parl:
-        #        self.submodelurls = Parl(delayed(self._get_submodels_from_page)(url) for url in self._modelurls)
-        #elif method == 'sequential':
-        #    submodels = []
-        #    for url in self._modelurls:
-        #        submodels.append(self._get_submodels_from_page(url))
-        #    self.submodelurls = submodels
 
     def scrapeListings(self):
         links = self._wrapperBatchRun_upperlimits()
@@ -190,28 +173,6 @@ class DetailsScraper(Scraper):
         c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
         try:
             root = html.fromstring(c)
-
-            # car['clsid'] = root.xpath(self.ilan_xpath)[0].text.strip()
-            # car['IlanTarihi'] = root.xpath(self.ilantarihi_xpath)[0].text.strip()
-            # car['Marka'] = root.xpath(self.marka_xpath)[0].text.strip()
-            # car['Seri'] = root.xpath(self.seri_xpath)[0].text.strip()
-            # car['Model'] = root.xpath(self.model_xpath)[0].text.strip()
-            # car['Yil'] = root.xpath(self.yil_xpath)[0].text.strip()
-            # car['Yakit'] = root.xpath(self.yakit_xpath)[0].text.strip()
-            # car['Vites'] = root.xpath(self.vites_xpath)[0].text.strip()
-            # car['Km'] = root.xpath(self.km_xpath)[0].text.strip()
-            # car['Motor Gucu'] = root.xpath(self.motorgucu_xpath)[0].text.strip()
-            # car['Motor Hacmi'] = root.xpath(self.motorhacmi_xpath)[0].text.strip()
-            # car['Cekis'] = root.xpath(self.cekis_xpath)[0].text.strip()
-            # #car['Kapi'] = root.xpath(self.kapi_xpath)[0].text.strip() #kapi xpath not defined
-            # car['Renk'] = root.xpath(self.renk_xpath)[0].text.strip()
-            # car['Garanti'] = root.xpath(self.garanti_xpath)[0].text.strip()
-            # car['Hasar Durumu'] = root.xpath(self.hasar_xpath)[0].text.strip()
-            # car['Plaka / Uyruk'] = root.xpath(self.plakauyruk_xpath)[0].text.strip()
-            # car['Kimden'] = root.xpath(self.kimden_xpath)[0].text.strip()
-            # car['Takas'] = root.xpath(self.takas_xpath)[0].text.strip()
-            # car['Durumu'] = root.xpath(self.durum_xpath)[0].text.strip()
-            # car['Fiyat'] = root.xpath(self.fiyat_xpath)[0].text.strip()
 
             car['clsid'] = xpathSafeRead(root, self.ilan_xpath, 'ilan.')
             car['IlanTarihi'] = xpathSafeRead(root, self.ilantarihi_xpath, 'ilan tarihi.')
@@ -312,9 +273,7 @@ class DetailsScraper(Scraper):
         self.batchrun(self._wrapperBatchRun, finlist)
 
     def scrapeDetails(self):
-        '''from random import shuffle
-        l = shuffle(self.listings)'''
-        #random shuffle doesnt work right now
+
         self.batchrun(self._wrapperBatchRun, self.listings)
 
     def scrapeDetails2(self):
