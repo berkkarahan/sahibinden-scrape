@@ -1,5 +1,6 @@
 import time
 import argparse
+import random
 from s_scrape.scraping import DetailsScraper, MainPageScraper
 from s_scrape.io import IO
 
@@ -47,30 +48,23 @@ parser.add_argument("--lf",help="""Load listings file for pre-scraped listings."
 parser.add_argument("--lo",help="""Save listings only and exit.""", action='store_true')
 parser.add_argument("--wait",help="""Seconds to wait before sending another request.""", type=int)
 parser.add_argument("--nworkers",help="""Number of workers for concurrent processing.""", type=int)
-parser.add_argument("--api", help="Sets api mode for URLutils.", action='store_true')
-parser.add_argument("--sln", help="Sets selenium mode for URLutils.", action='store_true')
 
 args = parser.parse_args()
 
 if __name__ == "__main__":
 
-    if args.sln and args.api:
-        print("Can't set both selenium and api to True, falling back to standard mode.")
-        urlmode = 'standard'
-    elif args.sln:
-        urlmode = 'selenium'
-        from s_scrape.srequests import URLsln
-        u = URLsln()
-    elif args.api:
-        urlmode = 'api'
-    else:
-        print("No mode set for URLutils. Setting standard mode.")
-        urlmode = 'standard'
-        from s_scrape.srequests import URLlib
-        u = URLlib()
+    from s_scrape.srequests import URLlib
+    u = URLlib()
+
+    lowerdelay = max(0,args.wait - random.uniform(1,5))
+    upperdelay = min(args.wait + random.uniform(1,5), 10)
 
     if args.lo:
-        listings = _scrape_listings(njobs=args.nworkers, wait=args.wait, uutils=u)
+        listings = _scrape_listings(njobs=args.nworkers,
+                                    lowerdelay=lowerdelay,
+                                    upperdelay=upperdelay, 
+                                    uutils=u)
+
         print("Listings scraped, saving listings.")
         IO.save_list("listings.txt", listings)
     elif args.lf:
@@ -78,7 +72,10 @@ if __name__ == "__main__":
         results = _using_saved_listings(args.lf, njobs=args.nworkers, uutils=u)
     else:
         print("<<<-------Starting full scraper------->>>")
-        results = _full_scraper(njobs=args.nworkers, wait=args.wait, uutils=u)
+        results = _full_scraper(njobs=args.nworkers,
+                                lowerdelay=lowerdelay,
+                                upperdelay=upperdelay,
+                                uutils=u)
 
     try:
         print("Using pandas for easier CSV extraction...")

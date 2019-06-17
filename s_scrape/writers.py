@@ -29,7 +29,7 @@ class ListWriter(_RecordWriter):
     def _save(self, filename):
         import csv
         keys = list(self.storage[0])
-        with open(outname, mode='w', newline='', encoding='utf-8') as f:
+        with open(filename, mode='w', newline='', encoding='utf-8') as f:
             fw = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
             fw.writerow(keys)
 

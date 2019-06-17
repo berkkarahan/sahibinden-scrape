@@ -272,7 +272,6 @@ class DetailsScraper(Scraper):
         self.batchrun(self._wrapperBatchRun, finlist)
 
     def scrapeDetails(self):
-
         self.batchrun(self._wrapperBatchRun, self.listings)
 
     def scrapeDetails2(self):
