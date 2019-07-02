@@ -77,7 +77,6 @@ class MainPageScraper(Scraper):
     def _get_listings_upperlimit(self, link):
         try:
             c = self.uutils.readURL(link)
-            xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[1]/div/div[1]/span'
             xpth = '//*[@id="searchResultsSearchForm"]/div/div[4]/div[1]/div[2]/div/div[1]/span'
 
             tot = self.uutils.choosebyXPath(c, xpth)
@@ -273,7 +272,6 @@ class DetailsScraper(Scraper):
         self.batchrun(self._wrapperBatchRun, finlist)
 
     def scrapeDetails(self):
-
         self.batchrun(self._wrapperBatchRun, self.listings)
 
     def scrapeDetails2(self):
