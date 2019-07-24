@@ -10,7 +10,6 @@ import sys
 import threading
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from functools import partialmethod
 
 class MainScraper():
     def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
@@ -144,3 +143,6 @@ class MainScraper():
             for x in as_completed(futures):
                 #print("Bottom-link url " + str(x.result()) + " added to bottom_links list.")
                 continue
+
+if __name__ == "__main__":
+    
