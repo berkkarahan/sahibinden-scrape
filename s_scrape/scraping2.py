@@ -11,6 +11,7 @@ import threading
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+
 class MainScraper():
     def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
         self._mainpage = "https://www.sahibinden.com/kategori/otomobil"
@@ -24,12 +25,12 @@ class MainScraper():
         self.bottom_links = []
         self.listings_list = []
 
-
     def _get_submodels_from_page(self, url, url_delayed=True):
         #sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+            c = self.uutils.delayedreadURL(
+                url, self.lowerdelay, self.upperdelay)
         else:
             c = self.uutils.readURL(url)
         soup = BeautifulSoup(c, "html.parser")
@@ -42,7 +43,7 @@ class MainScraper():
                 self.lock.acquire()
                 self.submodels.append(ret_str)
                 self.lock.release()
-        return sublist
+        # return subList
 
     def _get_listings_from_page(self, url, url_delayed=True):
         if url is None:
@@ -51,7 +52,8 @@ class MainScraper():
             print("----> Scraping listings from url: %s" % (url))
             listings_list = []
             if url_delayed:
-                c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+                c = self.uutils.delayedreadURL(
+                    url, self.lowerdelay, self.upperdelay)
             else:
                 c = self.uutils.readURL(url)
             soup = BeautifulSoup(c, "html.parser")
@@ -63,7 +65,7 @@ class MainScraper():
                     a_curr = cur.a
                     print('Link posting: ' + a_curr['href'])
                     ret_str = "https://www.sahibinden.com" + a_curr['href']
-                    #listings_list.append(ret_str)
+                    # listings_list.append(ret_str)
                     self.lock.acquire()
                     self.listings_list.append(ret_str)
                     self.lock.release()
@@ -79,7 +81,7 @@ class MainScraper():
 
             tot = self.uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
-            tot = re.findall('\d+',tot)
+            tot = re.findall('\d+', tot)
             tot = int(tot[0])
             rem = tot % 20
             tot = tot + rem
@@ -87,25 +89,28 @@ class MainScraper():
                 tot = 20
             return min(tot, 980)
         except:
-           print("Read error - upperlimit: " + link)
-           return 20
+            print("Read error - upperlimit: " + link)
+            return 20
 
     def _build_model_urls(self):
-       c = self.uutils.readURL(self._mainpage)
-       soup = BeautifulSoup(c, "html.parser")
-       ctgList = soup.find_all("ul", {"class": "categoryList"})
-       carList = ctgList[0].find_all("li")
-       for itm in carList:
-           tmp = itm.find("a", href=True)
-           self.main_modelurls.append("https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
+        c = self.uutils.readURL(self._mainpage)
+        soup = BeautifulSoup(c, "html.parser")
+        ctgList = soup.find_all("ul", {"class": "categoryList"})
+        carList = ctgList[0].find_all("li")
+        for itm in carList:
+            tmp = itm.find("a", href=True)
+            self.main_modelurls.append(
+                "https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
 
     def _scrape_sub_models(self):
         with ThreadPoolExecutor(self.n_jobs) as executor:
             futures = []
             for murl in self.main_modelurls:
-                futures.append(executor.submit(self._get_submodels_from_page(murl)))
+                futures.append(executor.submit(
+                    self._get_submodels_from_page(murl)))
             for x in as_completed(futures):
                 #print("Submodel-url " + str(x.result() + " added to submodelurls list."))
+                print("Future " + str(x) + " completed.")
                 continue
 
     def _scrape_upper_limits(self):
@@ -115,7 +120,8 @@ class MainScraper():
                     continue
                 else:
                     upperlimit = self._get_listings_upperlimit(url)
-                    print("Upperlimit for link: %s   -->   is %s" % (mainlink, str(upperlimit)))
+                    print("Upperlimit for link: %s   -->   is %s" %
+                          (mainlink, str(upperlimit)))
                     for pagingoffset in range(0, upperlimit + 10, 20):
                         link = mainlink + "?pagingOffset=" + str(pagingoffset)
                         self.lock.acquire()
@@ -128,6 +134,7 @@ class MainScraper():
                 futures.append(executor.submit(listings_upperlimit, surl))
             for x in as_completed(futures):
                 #print("Bottom-link url " + str(x.result()) + " added to bottom_links list.")
+                print("Future " + str(x) + " completed.")
                 continue
 
     def preScraping(self):
@@ -139,10 +146,9 @@ class MainScraper():
         with ThreadPoolExecutor(self.n_jobs) as executor:
             futures = []
             for burl in self.bottom_links:
-                futures.append(executor.submit(self._get_listings_from_page, burl))
+                futures.append(executor.submit(
+                    self._get_listings_from_page, burl))
             for x in as_completed(futures):
                 #print("Bottom-link url " + str(x.result()) + " added to bottom_links list.")
+                print("Future " + str(x) + " completed.")
                 continue
-
-if __name__ == "__main__":
-    
