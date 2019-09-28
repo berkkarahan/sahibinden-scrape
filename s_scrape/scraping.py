@@ -9,9 +9,11 @@ import re
 import sys
 import threading
 
+
 class MainPageScraper(Scraper):
     def __init__(self, n_jobs, uutils, lowerdelay=1, upperdelay=5):
-        super().__init__(url="https://www.sahibinden.com/kategori/otomobil", njobs = n_jobs, lowerdelay=lowerdelay, upperdelay=upperdelay)
+        super().__init__(url="https://www.sahibinden.com/kategori/otomobil",
+                         njobs=n_jobs, lowerdelay=lowerdelay, upperdelay=upperdelay)
         self._modelurls = []
         self.submodelurls = []
         self._listings = []
@@ -27,12 +29,13 @@ class MainPageScraper(Scraper):
     def listings(self):
         return self._listings
 
-    #Private methods
+    # Private methods
     def _get_submodels_from_page(self, url, url_delayed=True):
         sublist = list()
         print("----> Scraping sub-models from url: %s" % (url))
         if url_delayed:
-            c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+            c = self.uutils.delayedreadURL(
+                url, self.lowerdelay, self.upperdelay)
         else:
             c = self.uutils.readURL(url)
         soup = BeautifulSoup(c, "html.parser")
@@ -51,7 +54,8 @@ class MainPageScraper(Scraper):
         try:
             print("----> Scraping listings from url: %s" % (url))
             if url_delayed:
-                c = self.uutils.delayedreadURL(url, self.lowerdelay, self.upperdelay)
+                c = self.uutils.delayedreadURL(
+                    url, self.lowerdelay, self.upperdelay)
             else:
                 c = self.uutils.readURL(url)
             soup = BeautifulSoup(c, "html.parser")
@@ -81,7 +85,7 @@ class MainPageScraper(Scraper):
 
             tot = self.uutils.choosebyXPath(c, xpth)
             tot = tot.replace(".", "")
-            tot = re.findall('\d+',tot)
+            tot = re.findall('\d+', tot)
             tot = int(tot[0])
             rem = tot % 20
             tot = tot + rem
@@ -89,8 +93,8 @@ class MainPageScraper(Scraper):
                 tot = 20
             return min(tot, 980)
         except:
-           print("Read error - upperlimit: " + link)
-           return 20
+            print("Read error - upperlimit: " + link)
+            return 20
 
     def _wrapperBatchRun_upperlimits(self):
         flat_list = IO.flatten_list(self.submodelurls)
@@ -101,21 +105,23 @@ class MainPageScraper(Scraper):
                 continue
             else:
                 upperlimit = self._get_listings_upperlimit(mainlink)
-                print("Upperlimit for link: %s   -->   is %s" % (mainlink, str(upperlimit)))
+                print("Upperlimit for link: %s   -->   is %s" %
+                      (mainlink, str(upperlimit)))
                 for pagingoffset in range(0, upperlimit + 10, 20):
                     link = mainlink + "?pagingOffset=" + str(pagingoffset)
                     links.append(link)
         return links
 
     def _wrapperBatchRun_appendlistings(self, url):
-        #self._listings.append(self._get_listings_from_page(url))
+        # self._listings.append(self._get_listings_from_page(url))
         self._get_listings_from_page(url)
 
     def _wrapperBatchRun_scrapeModels(self, car):
         tmp = car.find("a", href=True)
-        self._modelurls.append("https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
+        self._modelurls.append(
+            "https://www.sahibinden.com" + tmp['href'] + "?pagingOffset=")
 
-    #Public methods
+    # Public methods
     def scrapeModels(self):
         c = self.uutils.readURL(self.link)
         soup = BeautifulSoup(c, "html.parser")
@@ -123,7 +129,7 @@ class MainPageScraper(Scraper):
         carList = ctgList[0].find_all("li")
         self.batchrun(self._wrapperBatchRun_scrapeModels, carList)
 
-    def _wrapperBatchRun_scrapeSubModels(self,url):
+    def _wrapperBatchRun_scrapeSubModels(self, url):
         self.submodelurls.append(self._get_submodels_from_page(url))
 
     def scrapeSubModels(self):
@@ -131,7 +137,8 @@ class MainPageScraper(Scraper):
 
     def scrapeListings(self):
         links = self._wrapperBatchRun_upperlimits()
-        self.batchrun(self._wrapperBatchRun_appendlistings,links)
+        self.batchrun(self._wrapperBatchRun_appendlistings, links)
+
 
 class DetailsScraper(Scraper):
     def __init__(self, listings, n_jobs, uutils, lowerdelay=1, upperdelay=5):
@@ -139,9 +146,9 @@ class DetailsScraper(Scraper):
         self.listings = listings
         self.final_list = []
         self.n_jobs = n_jobs
-        self.uutils=uutils
+        self.uutils = uutils
 
-        #Xpath references for posting details
+        # Xpath references for posting details
         self.ilan_xpath = '//*[@id="classifiedId"]'
         self.ilantarihi_xpath = '//*[@id="classifiedDetail"]/div[1]/div[2]/div[2]/ul/li[2]/span'
         self.marka_xpath = '//*[@id="classifiedDetail"]/div[1]/div[2]/div[2]/ul/li[3]/span'
@@ -174,22 +181,29 @@ class DetailsScraper(Scraper):
             root = html.fromstring(c)
 
             car['clsid'] = xpathSafeRead(root, self.ilan_xpath, 'ilan.')
-            car['IlanTarihi'] = xpathSafeRead(root, self.ilantarihi_xpath, 'ilan tarihi.')
-            car['Marka'] = xpathSafeRead(root, self.marka_xpath, 'marka.')#root.xpath(self.marka_xpath)[0].text.strip()
+            car['IlanTarihi'] = xpathSafeRead(
+                root, self.ilantarihi_xpath, 'ilan tarihi.')
+            # root.xpath(self.marka_xpath)[0].text.strip()
+            car['Marka'] = xpathSafeRead(root, self.marka_xpath, 'marka.')
             car['Seri'] = xpathSafeRead(root, self.seri_xpath, 'seri.')
             car['Model'] = xpathSafeRead(root, self.model_xpath, 'model.')
             car['Yil'] = xpathSafeRead(root, self.yil_xpath, 'yil.')
             car['Yakit'] = xpathSafeRead(root, self.yakit_xpath, 'yakit.')
             car['Vites'] = xpathSafeRead(root, self.vites_xpath, 'vites')
             car['Km'] = xpathSafeRead(root, self.km_xpath, 'km.')
-            car['Motor Gucu'] = xpathSafeRead(root, self.motorgucu_xpath, 'motor gucu.')
-            car['Motor Hacmi'] = xpathSafeRead(root, self.motorhacmi_xpath, 'motor hacmi.')
+            car['Motor Gucu'] = xpathSafeRead(
+                root, self.motorgucu_xpath, 'motor gucu.')
+            car['Motor Hacmi'] = xpathSafeRead(
+                root, self.motorhacmi_xpath, 'motor hacmi.')
             car['Cekis'] = xpathSafeRead(root, self.cekis_xpath, 'cekis.')
             # #car['Kapi'] = root.xpath(self.kapi_xpath)[0].text.strip() #kapi xpath not defined
             car['Renk'] = xpathSafeRead(root, self.renk_xpath, 'renk.')
-            car['Garanti'] = xpathSafeRead(root, self.garanti_xpath, 'garanti.')
-            car['Hasar Durumu'] = xpathSafeRead(root, self.hasar_xpath, 'hasar durumu.')
-            car['Plaka / Uyruk'] = xpathSafeRead(root, self.plakauyruk_xpath, 'plaka/uyruk.')
+            car['Garanti'] = xpathSafeRead(
+                root, self.garanti_xpath, 'garanti.')
+            car['Hasar Durumu'] = xpathSafeRead(
+                root, self.hasar_xpath, 'hasar durumu.')
+            car['Plaka / Uyruk'] = xpathSafeRead(root,
+                                                 self.plakauyruk_xpath, 'plaka/uyruk.')
             car['Kimden'] = xpathSafeRead(root, self.kimden_xpath, 'kimden.')
             car['Takas'] = xpathSafeRead(root, self.takas_xpath, 'takas.')
             car['Durumu'] = xpathSafeRead(root, self.durum_xpath, 'durumu.')
@@ -255,13 +269,13 @@ class DetailsScraper(Scraper):
         self.final_list.append(self._get_details_from_url_xpath(url))
 
     def scrapeUrl(self, url, method='xpath'):
-        if method=='xpath':
+        if method == 'xpath':
             return self._get_details_from_url_xpath(url)
-        elif method =='soup':
+        elif method == 'soup':
             return self._get_details_from_url(url)
 
     def _old_scrapeDetails(self):
-        #hotfix!
+        # hotfix!
         finlist = []
         for itm in self.listings:
             if type(itm) == list:
@@ -272,11 +286,6 @@ class DetailsScraper(Scraper):
         self.batchrun(self._wrapperBatchRun, finlist)
 
     def scrapeDetails(self):
-        self.batchrun(self._wrapperBatchRun, self.listings)
-
-    def scrapeDetails2(self):
-        from s_scrape.utils import flatten
         from random import shuffle
-        fl = flatten(self.listings)
-        fl = shuffle(fl)
-        self.batchrun(self._wrapperBatchRun, fl)
+        shuffle(self.listings)
+        self.batchrun(self._wrapperBatchRun, self.listings)

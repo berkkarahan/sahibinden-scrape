@@ -5,16 +5,17 @@ import random
 import requests
 from lxml import html
 
+
 class Scraper():
     def __init__(self,
-                url="",
-                njobs=4,
-                upperdelay = 0.8,
-                lowerdelay = 0.5):
+                 url="",
+                 njobs=4,
+                 upperdelay=0.8,
+                 lowerdelay=0.5):
         self._link = url
         self._njobs = njobs
 
-        #Delay limits for delayedreadURL
+        # Delay limits for delayedreadURL
         self.upperdelay = upperdelay
         self.lowerdelay = lowerdelay
 
@@ -28,22 +29,20 @@ class Scraper():
             # Create an index range for l of n items:
             yield l[i:i+njobs]
 
-
     def _threader(self, func, urllist):
         threads = []
-        #initialize threads
+        # initialize threads
         for url in urllist:
             task = threading.Thread(target=func, args=(url,), daemon=True)
             threads.append(task)
-        #start threads
+        # start threads
         for thread in threads:
             thread.start()
-        #wait for all to finish
+        # wait for all to finish
         for thread in threads:
             thread.join()
-        #delete all threads
+        # delete all threads
         del threads[:]
-
 
     def batchrun(self, func, links):
         links = list(links)
@@ -58,7 +57,7 @@ class Scraper():
 
 class URLrequests():
     def __init__(self, bypassdelayed=False):
-        self.bypassdelayed=bypassdelayed
+        self.bypassdelayed = bypassdelayed
 
     def _facebook(self, url):
         return requests.get('https://developers.facebook.com/tools/debug/echo/?q=' + url, verify=False).text
@@ -80,8 +79,8 @@ class URLrequests():
     def _apireadURL(self, url):
         apilist = [self._facebook, self._code_beautify, self._photopea]
         upper = random.randint(0, len(apilist))
-        #while apilist and request_not_succesful:
-        for _ in range(0,len(apilist)):
+        # while apilist and request_not_succesful:
+        for _ in range(0, len(apilist)):
             idx = random.randint(0, upper)
             upper = random.randint(0, len(apilist))
             try:
@@ -90,7 +89,6 @@ class URLrequests():
             except:
                 apilist.pop(idx)
         return content
-
 
     def readURL(self, url):
         try:
@@ -106,7 +104,7 @@ class URLrequests():
         if self.bypassdelayed:
             return self._readURL
         else:
-            time.sleep(random.uniform(lower_limit,upper_limit))
+            time.sleep(random.uniform(lower_limit, upper_limit))
             return self.readURL(url)
 
     def choosebyXPath(self, page_content, xpath):
